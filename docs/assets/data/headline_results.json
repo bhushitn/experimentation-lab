@@ -1,0 +1,17 @@
+{
+ "peeking_naive_fpr": 0.24075,
+ "peeking_sequential_fpr": 0.0495,
+ "peeking_n_sims": 4000,
+ "multiple_naive_fwer": 0.62875,
+ "multiple_bh_fwer": 0.048,
+ "contamination_itt": 0.37776289148184716,
+ "contamination_per_protocol": 0.8462451035461793,
+ "contamination_iv": 0.539661273545496,
+ "contamination_truth": 0.5,
+ "interference_user_randomized": 0.5202745840024772,
+ "interference_cluster_randomized": 0.8300252916857094,
+ "interference_gte": 0.8,
+ "subgroup_fishing_discovery_rate": 0.63775,
+ "novelty_week1": 0.31791020236319767,
+ "novelty_long_run": 0.1
+}

@@ -1,0 +1,19 @@
+window.LAB_DATA = window.LAB_DATA || {};
+window.LAB_DATA["contamination"] = {
+ "estimators": [
+  "intent_to_treat",
+  "per_protocol",
+  "iv_wald"
+ ],
+ "estimates": [
+  0.37776289148184716,
+  0.8462451035461793,
+  0.539661273545496
+ ],
+ "expected": [
+  0.3451568353840869,
+  0.8342722267162195,
+  0.4930811934058385
+ ],
+ "true_effect": 0.5
+};

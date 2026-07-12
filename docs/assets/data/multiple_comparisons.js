@@ -1,0 +1,31 @@
+window.LAB_DATA = window.LAB_DATA || {};
+window.LAB_DATA["multiple_comparisons"] = {
+ "policies": [
+  "naive",
+  "bonferroni",
+  "benjamini_hochberg"
+ ],
+ "fwer": [
+  0.62875,
+  0.047,
+  0.048
+ ],
+ "summary": {
+  "fwer": {
+   "naive": 0.62875,
+   "bonferroni": 0.047,
+   "benjamini_hochberg": 0.048
+  },
+  "fdr": {
+   "naive": 0.62875,
+   "bonferroni": 0.047,
+   "benjamini_hochberg": 0.048
+  },
+  "power": {
+   "naive": NaN,
+   "bonferroni": NaN,
+   "benjamini_hochberg": NaN
+  }
+ },
+ "n_metrics": 20
+};
