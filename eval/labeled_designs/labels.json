@@ -1,0 +1,94 @@
+{
+ "clean_00": [],
+ "clean_01": [],
+ "clean_02": [],
+ "clean_03": [],
+ "clean_04": [],
+ "clean_05": [],
+ "clean_06": [],
+ "clean_07": [],
+ "single_00": [
+  "PEEKING"
+ ],
+ "single_01": [
+  "MULTIPLE_COMPARISONS"
+ ],
+ "single_02": [
+  "CONTAMINATION"
+ ],
+ "single_03": [
+  "INTERFERENCE"
+ ],
+ "single_04": [
+  "SUBGROUP_FISHING"
+ ],
+ "single_05": [
+  "NOVELTY_TOO_SHORT"
+ ],
+ "single_06": [
+  "UNDERPOWERED"
+ ],
+ "single_07": [
+  "PEEKING"
+ ],
+ "single_08": [
+  "MULTIPLE_COMPARISONS"
+ ],
+ "single_09": [
+  "CONTAMINATION"
+ ],
+ "single_10": [
+  "INTERFERENCE"
+ ],
+ "single_11": [
+  "SUBGROUP_FISHING"
+ ],
+ "single_12": [
+  "NOVELTY_TOO_SHORT"
+ ],
+ "single_13": [
+  "UNDERPOWERED"
+ ],
+ "multi_00": [
+  "MULTIPLE_COMPARISONS",
+  "PEEKING"
+ ],
+ "multi_01": [
+  "CONTAMINATION",
+  "PEEKING"
+ ],
+ "multi_02": [
+  "INTERFERENCE",
+  "PEEKING"
+ ],
+ "multi_03": [
+  "PEEKING",
+  "SUBGROUP_FISHING"
+ ],
+ "multi_04": [
+  "NOVELTY_TOO_SHORT",
+  "PEEKING"
+ ],
+ "multi_05": [
+  "PEEKING",
+  "UNDERPOWERED"
+ ],
+ "multi_06": [
+  "CONTAMINATION",
+  "MULTIPLE_COMPARISONS"
+ ],
+ "multi_07": [
+  "INTERFERENCE",
+  "MULTIPLE_COMPARISONS"
+ ],
+ "multi_08": [
+  "MULTIPLE_COMPARISONS",
+  "PEEKING",
+  "SUBGROUP_FISHING"
+ ],
+ "multi_09": [
+  "INTERFERENCE",
+  "NOVELTY_TOO_SHORT",
+  "UNDERPOWERED"
+ ]
+}

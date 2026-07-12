@@ -1,0 +1,477 @@
+{
+ "generation": {
+  "method": "reference_run",
+  "model": "claude-fable-5",
+  "note": "Reference memos produced with the review agent's model against the committed designs; flaw difficulty is bounded by construction. Regenerate live with your own key: python eval/harness.py --live"
+ },
+ "memos": {
+  "clean_00": {
+   "recommendation": "Approve as designed: signup flow simplification is properly powered, monitored on a pre-committed boundary, and free of exposure or multiplicity risks.",
+   "verdict": "approve",
+   "flags": [],
+   "analysis_plan": "Two-proportion z-test on the primary rate; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "clean_01": {
+   "recommendation": "Approve as designed: upload pipeline speedup is properly powered, monitored on a pre-committed boundary, and free of exposure or multiplicity risks.",
+   "verdict": "approve",
+   "flags": [],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "clean_02": {
+   "recommendation": "Approve as designed: creator payout change is properly powered, monitored on a pre-committed boundary, and free of exposure or multiplicity risks.",
+   "verdict": "approve",
+   "flags": [],
+   "analysis_plan": "Welch t-test on the mean with a Mann-Whitney U robustness check, since the metric is zero-inflated with a heavy right tail; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "clean_03": {
+   "recommendation": "Approve as designed: notification batching is properly powered, monitored on a pre-committed boundary, and free of exposure or multiplicity risks.",
+   "verdict": "approve",
+   "flags": [],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "clean_04": {
+   "recommendation": "Approve as designed: signup flow simplification is properly powered, monitored on a pre-committed boundary, and free of exposure or multiplicity risks.",
+   "verdict": "approve",
+   "flags": [],
+   "analysis_plan": "Two-proportion z-test on the primary rate; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "clean_05": {
+   "recommendation": "Approve as designed: upload pipeline speedup is properly powered, monitored on a pre-committed boundary, and free of exposure or multiplicity risks.",
+   "verdict": "approve",
+   "flags": [],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "clean_06": {
+   "recommendation": "Approve as designed: creator payout change is properly powered, monitored on a pre-committed boundary, and free of exposure or multiplicity risks.",
+   "verdict": "approve",
+   "flags": [],
+   "analysis_plan": "Welch t-test on the mean with a Mann-Whitney U robustness check, since the metric is zero-inflated with a heavy right tail; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "clean_07": {
+   "recommendation": "Approve as designed: notification batching is properly powered, monitored on a pre-committed boundary, and free of exposure or multiplicity risks.",
+   "verdict": "approve",
+   "flags": [],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_00": {
+   "recommendation": "Revise before launch: fix peeking, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "PEEKING",
+     "severity": "high",
+     "rationale": "The monitoring plan stops at the first significant daily p-value with no sequential correction, so the stated alpha is fiction.",
+     "quantification": "Measured in the lab: 14 daily uncorrected looks yield a 24.1% false positive rate against a nominal 5% (4,000 simulated nulls); the O'Brien-Fleming boundary restores 4.95%.",
+     "fix": "Pre-commit a Lan-DeMets alpha-spending boundary for the daily looks, or restrict to the scheduled interim and final readouts."
+    }
+   ],
+   "analysis_plan": "Two-proportion z-test on the primary rate; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_01": {
+   "recommendation": "Revise before launch: fix multiple comparisons, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "MULTIPLE_COMPARISONS",
+     "severity": "medium",
+     "rationale": "20 metrics are tested for significance with correction 'none', so some metric will look significant by chance in most experiments.",
+     "quantification": "Evidence pack: expected family-wise error rate 0.642 if uncorrected; the lab measures 62.9% for 20 independent null metrics, and Benjamini-Hochberg holds FDR at 4.8%.",
+     "fix": "Name one primary decision metric; apply Benjamini-Hochberg to the remaining metrics as exploratory."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_02": {
+   "recommendation": "Revise before launch: fix contamination, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "CONTAMINATION",
+     "severity": "medium",
+     "rationale": "Exposure notes describe two-sided non-compliance (shared devices exposing control, logged-out sessions unexposing treatment), and the plan compares users by what they experienced, which is per-protocol selection bias.",
+     "quantification": "Measured in the lab at 20%/10% contamination with a true effect of 0.50: per-protocol reads 0.85, intent-to-treat attenuates to 0.38, and the IV/Wald estimator recovers 0.54.",
+     "fix": "Analyze intent-to-treat by assignment for the decision, and report the IV/Wald estimate (ITT divided by the compliance gap) for the per-user effect."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the mean with a Mann-Whitney U robustness check, since the metric is zero-inflated with a heavy right tail; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_03": {
+   "recommendation": "Revise before launch: fix interference, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "INTERFERENCE",
+     "severity": "high",
+     "rationale": "The share-to-friends component moves outcomes through the follow graph while randomization is at the user level, so control users are partially treated and the contrast collapses.",
+     "quantification": "Measured in the lab: with direct effect 0.5 and spillover 0.3 (global effect 0.8), user-level randomization estimates 0.52, missing the spillover entirely; cluster randomization recovers 0.83.",
+     "fix": "Randomize connected clusters of the follow graph rather than users, and size the experiment on the effective number of clusters."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_04": {
+   "recommendation": "Revise before launch: fix subgroup fishing, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "SUBGROUP_FISHING",
+     "severity": "medium",
+     "rationale": "The plan scans 20 country segments post hoc and reports whatever reaches significance, which manufactures discoveries under the null.",
+     "quantification": "Measured in the lab: scanning 20 null segments finds at least one 'significant' subgroup in 63.8% of experiments, about one false subgroup per experiment.",
+     "fix": "Pre-register the segments that matter to the decision and apply Benjamini-Hochberg to any exploratory scan."
+    }
+   ],
+   "analysis_plan": "Two-proportion z-test on the primary rate; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_05": {
+   "recommendation": "Revise before launch: fix novelty too short, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "NOVELTY_TOO_SHORT",
+     "severity": "high",
+     "rationale": "A visibly noticeable redesign generates a novelty spike, and a 7-day readout averages that spike into the estimate.",
+     "quantification": "Measured in the lab with a decaying effect (long-run 0.10, novelty amplitude 0.40, 5-day time constant): the week-1 readout gives 0.318, a 3.2x overstatement of the long-run effect; a post-burn-in window reads 0.13.",
+     "fix": "Extend to at least four weeks and base the launch decision on a post-burn-in window, or model the decay explicitly."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_06": {
+   "recommendation": "Revise before launch: fix underpowered, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "UNDERPOWERED",
+     "severity": "high",
+     "rationale": "The design cannot detect its own target effect at the stated power target, so a null readout is uninformative and a significant one is exaggerated.",
+     "quantification": "Evidence pack: achieved power 0.198 against a 0.80 target; 3,920 users per arm versus 25,117 required.",
+     "fix": "Extend the run or widen the ramp to reach the required sample per arm, or re-scope the minimum detectable effect the team actually needs."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the mean with a Mann-Whitney U robustness check, since the metric is zero-inflated with a heavy right tail; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_07": {
+   "recommendation": "Revise before launch: fix peeking, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "PEEKING",
+     "severity": "high",
+     "rationale": "The monitoring plan stops at the first significant daily p-value with no sequential correction, so the stated alpha is fiction.",
+     "quantification": "Measured in the lab: 14 daily uncorrected looks yield a 24.1% false positive rate against a nominal 5% (4,000 simulated nulls); the O'Brien-Fleming boundary restores 4.95%.",
+     "fix": "Pre-commit a Lan-DeMets alpha-spending boundary for the daily looks, or restrict to the scheduled interim and final readouts."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_08": {
+   "recommendation": "Revise before launch: fix multiple comparisons, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "MULTIPLE_COMPARISONS",
+     "severity": "medium",
+     "rationale": "20 metrics are tested for significance with correction 'none', so some metric will look significant by chance in most experiments.",
+     "quantification": "Evidence pack: expected family-wise error rate 0.642 if uncorrected; the lab measures 62.9% for 20 independent null metrics, and Benjamini-Hochberg holds FDR at 4.8%.",
+     "fix": "Name one primary decision metric; apply Benjamini-Hochberg to the remaining metrics as exploratory."
+    }
+   ],
+   "analysis_plan": "Two-proportion z-test on the primary rate; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_09": {
+   "recommendation": "Revise before launch: fix contamination, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "CONTAMINATION",
+     "severity": "medium",
+     "rationale": "Exposure notes describe two-sided non-compliance (shared devices exposing control, logged-out sessions unexposing treatment), and the plan compares users by what they experienced, which is per-protocol selection bias.",
+     "quantification": "Measured in the lab at 20%/10% contamination with a true effect of 0.50: per-protocol reads 0.85, intent-to-treat attenuates to 0.38, and the IV/Wald estimator recovers 0.54.",
+     "fix": "Analyze intent-to-treat by assignment for the decision, and report the IV/Wald estimate (ITT divided by the compliance gap) for the per-user effect."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_10": {
+   "recommendation": "Revise before launch: fix interference, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "INTERFERENCE",
+     "severity": "high",
+     "rationale": "The share-to-friends component moves outcomes through the follow graph while randomization is at the user level, so control users are partially treated and the contrast collapses.",
+     "quantification": "Measured in the lab: with direct effect 0.5 and spillover 0.3 (global effect 0.8), user-level randomization estimates 0.52, missing the spillover entirely; cluster randomization recovers 0.83.",
+     "fix": "Randomize connected clusters of the follow graph rather than users, and size the experiment on the effective number of clusters."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the mean with a Mann-Whitney U robustness check, since the metric is zero-inflated with a heavy right tail; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_11": {
+   "recommendation": "Revise before launch: fix subgroup fishing, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "SUBGROUP_FISHING",
+     "severity": "medium",
+     "rationale": "The plan scans 20 country segments post hoc and reports whatever reaches significance, which manufactures discoveries under the null.",
+     "quantification": "Measured in the lab: scanning 20 null segments finds at least one 'significant' subgroup in 63.8% of experiments, about one false subgroup per experiment.",
+     "fix": "Pre-register the segments that matter to the decision and apply Benjamini-Hochberg to any exploratory scan."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_12": {
+   "recommendation": "Revise before launch: fix novelty too short, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "NOVELTY_TOO_SHORT",
+     "severity": "high",
+     "rationale": "A visibly noticeable redesign generates a novelty spike, and a 7-day readout averages that spike into the estimate.",
+     "quantification": "Measured in the lab with a decaying effect (long-run 0.10, novelty amplitude 0.40, 5-day time constant): the week-1 readout gives 0.318, a 3.2x overstatement of the long-run effect; a post-burn-in window reads 0.13.",
+     "fix": "Extend to at least four weeks and base the launch decision on a post-burn-in window, or model the decay explicitly."
+    }
+   ],
+   "analysis_plan": "Two-proportion z-test on the primary rate; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "single_13": {
+   "recommendation": "Revise before launch: fix underpowered, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "UNDERPOWERED",
+     "severity": "high",
+     "rationale": "The design cannot detect its own target effect at the stated power target, so a null readout is uninformative and a significant one is exaggerated.",
+     "quantification": "Evidence pack: achieved power 0.176 against a 0.80 target; 3,360 users per arm versus 25,117 required.",
+     "fix": "Extend the run or widen the ramp to reach the required sample per arm, or re-scope the minimum detectable effect the team actually needs."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "multi_00": {
+   "recommendation": "Revise before launch: fix peeking, multiple comparisons, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "PEEKING",
+     "severity": "high",
+     "rationale": "The monitoring plan stops at the first significant daily p-value with no sequential correction, so the stated alpha is fiction.",
+     "quantification": "Measured in the lab: 14 daily uncorrected looks yield a 24.1% false positive rate against a nominal 5% (4,000 simulated nulls); the O'Brien-Fleming boundary restores 4.95%.",
+     "fix": "Pre-commit a Lan-DeMets alpha-spending boundary for the daily looks, or restrict to the scheduled interim and final readouts."
+    },
+    {
+     "code": "MULTIPLE_COMPARISONS",
+     "severity": "medium",
+     "rationale": "20 metrics are tested for significance with correction 'none', so some metric will look significant by chance in most experiments.",
+     "quantification": "Evidence pack: expected family-wise error rate 0.642 if uncorrected; the lab measures 62.9% for 20 independent null metrics, and Benjamini-Hochberg holds FDR at 4.8%.",
+     "fix": "Name one primary decision metric; apply Benjamini-Hochberg to the remaining metrics as exploratory."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the mean with a Mann-Whitney U robustness check, since the metric is zero-inflated with a heavy right tail; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "multi_01": {
+   "recommendation": "Revise before launch: fix peeking, contamination, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "PEEKING",
+     "severity": "high",
+     "rationale": "The monitoring plan stops at the first significant daily p-value with no sequential correction, so the stated alpha is fiction.",
+     "quantification": "Measured in the lab: 14 daily uncorrected looks yield a 24.1% false positive rate against a nominal 5% (4,000 simulated nulls); the O'Brien-Fleming boundary restores 4.95%.",
+     "fix": "Pre-commit a Lan-DeMets alpha-spending boundary for the daily looks, or restrict to the scheduled interim and final readouts."
+    },
+    {
+     "code": "CONTAMINATION",
+     "severity": "medium",
+     "rationale": "Exposure notes describe two-sided non-compliance (shared devices exposing control, logged-out sessions unexposing treatment), and the plan compares users by what they experienced, which is per-protocol selection bias.",
+     "quantification": "Measured in the lab at 20%/10% contamination with a true effect of 0.50: per-protocol reads 0.85, intent-to-treat attenuates to 0.38, and the IV/Wald estimator recovers 0.54.",
+     "fix": "Analyze intent-to-treat by assignment for the decision, and report the IV/Wald estimate (ITT divided by the compliance gap) for the per-user effect."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "multi_02": {
+   "recommendation": "Revise before launch: fix peeking, interference, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "PEEKING",
+     "severity": "high",
+     "rationale": "The monitoring plan stops at the first significant daily p-value with no sequential correction, so the stated alpha is fiction.",
+     "quantification": "Measured in the lab: 14 daily uncorrected looks yield a 24.1% false positive rate against a nominal 5% (4,000 simulated nulls); the O'Brien-Fleming boundary restores 4.95%.",
+     "fix": "Pre-commit a Lan-DeMets alpha-spending boundary for the daily looks, or restrict to the scheduled interim and final readouts."
+    },
+    {
+     "code": "INTERFERENCE",
+     "severity": "high",
+     "rationale": "The share-to-friends component moves outcomes through the follow graph while randomization is at the user level, so control users are partially treated and the contrast collapses.",
+     "quantification": "Measured in the lab: with direct effect 0.5 and spillover 0.3 (global effect 0.8), user-level randomization estimates 0.52, missing the spillover entirely; cluster randomization recovers 0.83.",
+     "fix": "Randomize connected clusters of the follow graph rather than users, and size the experiment on the effective number of clusters."
+    }
+   ],
+   "analysis_plan": "Two-proportion z-test on the primary rate; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "multi_03": {
+   "recommendation": "Revise before launch: fix peeking, subgroup fishing, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "PEEKING",
+     "severity": "high",
+     "rationale": "The monitoring plan stops at the first significant daily p-value with no sequential correction, so the stated alpha is fiction.",
+     "quantification": "Measured in the lab: 14 daily uncorrected looks yield a 24.1% false positive rate against a nominal 5% (4,000 simulated nulls); the O'Brien-Fleming boundary restores 4.95%.",
+     "fix": "Pre-commit a Lan-DeMets alpha-spending boundary for the daily looks, or restrict to the scheduled interim and final readouts."
+    },
+    {
+     "code": "SUBGROUP_FISHING",
+     "severity": "medium",
+     "rationale": "The plan scans 20 country segments post hoc and reports whatever reaches significance, which manufactures discoveries under the null.",
+     "quantification": "Measured in the lab: scanning 20 null segments finds at least one 'significant' subgroup in 63.8% of experiments, about one false subgroup per experiment.",
+     "fix": "Pre-register the segments that matter to the decision and apply Benjamini-Hochberg to any exploratory scan."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "multi_04": {
+   "recommendation": "Revise before launch: fix peeking, novelty too short, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "PEEKING",
+     "severity": "high",
+     "rationale": "The monitoring plan stops at the first significant daily p-value with no sequential correction, so the stated alpha is fiction.",
+     "quantification": "Measured in the lab: 14 daily uncorrected looks yield a 24.1% false positive rate against a nominal 5% (4,000 simulated nulls); the O'Brien-Fleming boundary restores 4.95%.",
+     "fix": "Pre-commit a Lan-DeMets alpha-spending boundary for the daily looks, or restrict to the scheduled interim and final readouts."
+    },
+    {
+     "code": "NOVELTY_TOO_SHORT",
+     "severity": "high",
+     "rationale": "A visibly noticeable redesign generates a novelty spike, and a 7-day readout averages that spike into the estimate.",
+     "quantification": "Measured in the lab with a decaying effect (long-run 0.10, novelty amplitude 0.40, 5-day time constant): the week-1 readout gives 0.318, a 3.2x overstatement of the long-run effect; a post-burn-in window reads 0.13.",
+     "fix": "Extend to at least four weeks and base the launch decision on a post-burn-in window, or model the decay explicitly."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the mean with a Mann-Whitney U robustness check, since the metric is zero-inflated with a heavy right tail; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "multi_05": {
+   "recommendation": "Revise before launch: fix peeking, underpowered, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "PEEKING",
+     "severity": "high",
+     "rationale": "The monitoring plan stops at the first significant daily p-value with no sequential correction, so the stated alpha is fiction.",
+     "quantification": "Measured in the lab: 14 daily uncorrected looks yield a 24.1% false positive rate against a nominal 5% (4,000 simulated nulls); the O'Brien-Fleming boundary restores 4.95%.",
+     "fix": "Pre-commit a Lan-DeMets alpha-spending boundary for the daily looks, or restrict to the scheduled interim and final readouts."
+    },
+    {
+     "code": "UNDERPOWERED",
+     "severity": "high",
+     "rationale": "The design cannot detect its own target effect at the stated power target, so a null readout is uninformative and a significant one is exaggerated.",
+     "quantification": "Evidence pack: achieved power 0.272 against a 0.80 target; 4,480 users per arm versus 19,230 required.",
+     "fix": "Extend the run or widen the ramp to reach the required sample per arm, or re-scope the minimum detectable effect the team actually needs."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "multi_06": {
+   "recommendation": "Revise before launch: fix multiple comparisons, contamination, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "MULTIPLE_COMPARISONS",
+     "severity": "medium",
+     "rationale": "20 metrics are tested for significance with correction 'none', so some metric will look significant by chance in most experiments.",
+     "quantification": "Evidence pack: expected family-wise error rate 0.642 if uncorrected; the lab measures 62.9% for 20 independent null metrics, and Benjamini-Hochberg holds FDR at 4.8%.",
+     "fix": "Name one primary decision metric; apply Benjamini-Hochberg to the remaining metrics as exploratory."
+    },
+    {
+     "code": "CONTAMINATION",
+     "severity": "medium",
+     "rationale": "Exposure notes describe two-sided non-compliance (shared devices exposing control, logged-out sessions unexposing treatment), and the plan compares users by what they experienced, which is per-protocol selection bias.",
+     "quantification": "Measured in the lab at 20%/10% contamination with a true effect of 0.50: per-protocol reads 0.85, intent-to-treat attenuates to 0.38, and the IV/Wald estimator recovers 0.54.",
+     "fix": "Analyze intent-to-treat by assignment for the decision, and report the IV/Wald estimate (ITT divided by the compliance gap) for the per-user effect."
+    }
+   ],
+   "analysis_plan": "Two-proportion z-test on the primary rate; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "multi_07": {
+   "recommendation": "Revise before launch: fix multiple comparisons, interference, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "MULTIPLE_COMPARISONS",
+     "severity": "medium",
+     "rationale": "20 metrics are tested for significance with correction 'none', so some metric will look significant by chance in most experiments.",
+     "quantification": "Evidence pack: expected family-wise error rate 0.642 if uncorrected; the lab measures 62.9% for 20 independent null metrics, and Benjamini-Hochberg holds FDR at 4.8%.",
+     "fix": "Name one primary decision metric; apply Benjamini-Hochberg to the remaining metrics as exploratory."
+    },
+    {
+     "code": "INTERFERENCE",
+     "severity": "high",
+     "rationale": "The share-to-friends component moves outcomes through the follow graph while randomization is at the user level, so control users are partially treated and the contrast collapses.",
+     "quantification": "Measured in the lab: with direct effect 0.5 and spillover 0.3 (global effect 0.8), user-level randomization estimates 0.52, missing the spillover entirely; cluster randomization recovers 0.83.",
+     "fix": "Randomize connected clusters of the follow graph rather than users, and size the experiment on the effective number of clusters."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "multi_08": {
+   "recommendation": "Revise before launch: fix peeking, multiple comparisons, subgroup fishing, then this is a decision-grade experiment; the traffic and metric choices are otherwise sound.",
+   "verdict": "revise",
+   "flags": [
+    {
+     "code": "PEEKING",
+     "severity": "high",
+     "rationale": "The monitoring plan stops at the first significant daily p-value with no sequential correction, so the stated alpha is fiction.",
+     "quantification": "Measured in the lab: 14 daily uncorrected looks yield a 24.1% false positive rate against a nominal 5% (4,000 simulated nulls); the O'Brien-Fleming boundary restores 4.95%.",
+     "fix": "Pre-commit a Lan-DeMets alpha-spending boundary for the daily looks, or restrict to the scheduled interim and final readouts."
+    },
+    {
+     "code": "MULTIPLE_COMPARISONS",
+     "severity": "medium",
+     "rationale": "20 metrics are tested for significance with correction 'none', so some metric will look significant by chance in most experiments.",
+     "quantification": "Evidence pack: expected family-wise error rate 0.642 if uncorrected; the lab measures 62.9% for 20 independent null metrics, and Benjamini-Hochberg holds FDR at 4.8%.",
+     "fix": "Name one primary decision metric; apply Benjamini-Hochberg to the remaining metrics as exploratory."
+    },
+    {
+     "code": "SUBGROUP_FISHING",
+     "severity": "medium",
+     "rationale": "The plan scans 20 country segments post hoc and reports whatever reaches significance, which manufactures discoveries under the null.",
+     "quantification": "Measured in the lab: scanning 20 null segments finds at least one 'significant' subgroup in 63.8% of experiments, about one false subgroup per experiment.",
+     "fix": "Pre-register the segments that matter to the decision and apply Benjamini-Hochberg to any exploratory scan."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the mean with a Mann-Whitney U robustness check, since the metric is zero-inflated with a heavy right tail; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  },
+  "multi_09": {
+   "recommendation": "Reject in current form: the combination of interference, novelty too short, underpowered means the readout cannot answer the launch question; redesign before spending the traffic.",
+   "verdict": "reject",
+   "flags": [
+    {
+     "code": "INTERFERENCE",
+     "severity": "high",
+     "rationale": "The share-to-friends component moves outcomes through the follow graph while randomization is at the user level, so control users are partially treated and the contrast collapses.",
+     "quantification": "Measured in the lab: with direct effect 0.5 and spillover 0.3 (global effect 0.8), user-level randomization estimates 0.52, missing the spillover entirely; cluster randomization recovers 0.83.",
+     "fix": "Randomize connected clusters of the follow graph rather than users, and size the experiment on the effective number of clusters."
+    },
+    {
+     "code": "NOVELTY_TOO_SHORT",
+     "severity": "high",
+     "rationale": "A visibly noticeable redesign generates a novelty spike, and a 7-day readout averages that spike into the estimate.",
+     "quantification": "Measured in the lab with a decaying effect (long-run 0.10, novelty amplitude 0.40, 5-day time constant): the week-1 readout gives 0.318, a 3.2x overstatement of the long-run effect; a post-burn-in window reads 0.13.",
+     "fix": "Extend to at least four weeks and base the launch decision on a post-burn-in window, or model the decay explicitly."
+    },
+    {
+     "code": "UNDERPOWERED",
+     "severity": "high",
+     "rationale": "The design cannot detect its own target effect at the stated power target, so a null readout is uninformative and a significant one is exaggerated.",
+     "quantification": "Evidence pack: achieved power 0.104 against a 0.80 target; 1,120 users per arm versus 19,230 required.",
+     "fix": "Extend the run or widen the ramp to reach the required sample per arm, or re-scope the minimum detectable effect the team actually needs."
+    }
+   ],
+   "analysis_plan": "Welch t-test on the primary metric; add CUPED with a 28-day pre-period covariate to cut variance. Keep the scheduled-look alpha-spending plan for monitoring."
+  }
+ }
+}

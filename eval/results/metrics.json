@@ -1,0 +1,152 @@
+{
+ "n_cases": 32,
+ "exact_match": {
+  "value": 1.0,
+  "ci_low": 0.8928,
+  "ci_high": 1.0,
+  "n": 32
+ },
+ "micro": {
+  "precision": {
+   "value": 1.0,
+   "ci_low": 0.9036,
+   "ci_high": 1.0,
+   "n": 36
+  },
+  "recall": {
+   "value": 1.0,
+   "ci_low": 0.9036,
+   "ci_high": 1.0,
+   "n": 36
+  },
+  "tp": 36,
+  "fp": 0,
+  "fn": 0
+ },
+ "per_code": {
+  "PEEKING": {
+   "precision": {
+    "value": 1.0,
+    "ci_low": 0.7009,
+    "ci_high": 1.0,
+    "n": 9
+   },
+   "recall": {
+    "value": 1.0,
+    "ci_low": 0.7009,
+    "ci_high": 1.0,
+    "n": 9
+   },
+   "tp": 9,
+   "fp": 0,
+   "fn": 0
+  },
+  "MULTIPLE_COMPARISONS": {
+   "precision": {
+    "value": 1.0,
+    "ci_low": 0.6097,
+    "ci_high": 1.0,
+    "n": 6
+   },
+   "recall": {
+    "value": 1.0,
+    "ci_low": 0.6097,
+    "ci_high": 1.0,
+    "n": 6
+   },
+   "tp": 6,
+   "fp": 0,
+   "fn": 0
+  },
+  "CONTAMINATION": {
+   "precision": {
+    "value": 1.0,
+    "ci_low": 0.5101,
+    "ci_high": 1.0,
+    "n": 4
+   },
+   "recall": {
+    "value": 1.0,
+    "ci_low": 0.5101,
+    "ci_high": 1.0,
+    "n": 4
+   },
+   "tp": 4,
+   "fp": 0,
+   "fn": 0
+  },
+  "INTERFERENCE": {
+   "precision": {
+    "value": 1.0,
+    "ci_low": 0.5655,
+    "ci_high": 1.0,
+    "n": 5
+   },
+   "recall": {
+    "value": 1.0,
+    "ci_low": 0.5655,
+    "ci_high": 1.0,
+    "n": 5
+   },
+   "tp": 5,
+   "fp": 0,
+   "fn": 0
+  },
+  "SUBGROUP_FISHING": {
+   "precision": {
+    "value": 1.0,
+    "ci_low": 0.5101,
+    "ci_high": 1.0,
+    "n": 4
+   },
+   "recall": {
+    "value": 1.0,
+    "ci_low": 0.5101,
+    "ci_high": 1.0,
+    "n": 4
+   },
+   "tp": 4,
+   "fp": 0,
+   "fn": 0
+  },
+  "NOVELTY_TOO_SHORT": {
+   "precision": {
+    "value": 1.0,
+    "ci_low": 0.5101,
+    "ci_high": 1.0,
+    "n": 4
+   },
+   "recall": {
+    "value": 1.0,
+    "ci_low": 0.5101,
+    "ci_high": 1.0,
+    "n": 4
+   },
+   "tp": 4,
+   "fp": 0,
+   "fn": 0
+  },
+  "UNDERPOWERED": {
+   "precision": {
+    "value": 1.0,
+    "ci_low": 0.5101,
+    "ci_high": 1.0,
+    "n": 4
+   },
+   "recall": {
+    "value": 1.0,
+    "ci_low": 0.5101,
+    "ci_high": 1.0,
+    "n": 4
+   },
+   "tp": 4,
+   "fp": 0,
+   "fn": 0
+  }
+ },
+ "generation": {
+  "method": "reference_run",
+  "model": "claude-fable-5",
+  "note": "Reference memos produced with the review agent's model against the committed designs; flaw difficulty is bounded by construction. Regenerate live with your own key: python eval/harness.py --live"
+ }
+}
