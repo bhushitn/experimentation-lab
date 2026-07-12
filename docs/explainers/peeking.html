@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peeking: how checking your test daily manufactures false positives</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="column">
+    <p class="meta"><a href="../index.html">Experimentation Lab</a> / explainer 1 of 8</p>
+    <h1>Peeking: how checking your test daily manufactures false positives</h1>
+    <p class="deck">
+      A growth PM launches a signup test on a short-video app, watches the
+      dashboard every morning, and plans to call it the first day the p-value
+      goes green. The feature does nothing. Here is how often that habit
+      declares victory anyway.
+    </p>
+    <p class="meta">
+      Every number below comes from 4,000 simulated experiments with the true
+      effect fixed at exactly zero.
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/src/lab/pathologies/peeking.py">Reproduce this figure</a>.
+    </p>
+  </div>
+</header>
+
+<main>
+  <section class="scrolly">
+    <div class="graphic">
+      <figure>
+        <svg id="chart" viewBox="0 0 420 320" role="img"
+             aria-label="Cumulative false positive rate by day of experiment"></svg>
+        <figcaption id="caption">
+          4,000 simulated 14-day experiments, no true effect, one look per day.
+        </figcaption>
+        <noscript>
+          <img src="../assets/figures/peeking.svg" alt="Static figure:
+          cumulative false positive rate under daily peeking versus a
+          sequential boundary" style="max-width:100%">
+        </noscript>
+      </figure>
+    </div>
+
+    <div class="steps" id="steps">
+      <div class="step" data-step="0">
+        <h3>What 5% is supposed to mean</h3>
+        <p>Test once at alpha = 0.05 and, when the feature truly does
+        nothing, the test comes back "significant" in only
+        <span class="number">5%</span> of experiments. The dashed line marks
+        that 5%. It is the error rate the team believes it is running, and
+        it holds for exactly one look at the data.</p>
+      </div>
+      <div class="step" data-step="1">
+        <h3>Check daily, stop at green</h3>
+        <p>Now the PM checks every morning and stops the first day
+        p &lt; 0.05. The red curve is the share of the 4,000 no-effect
+        experiments already called "significant" by each day. By day 14 it
+        reaches <span class="number">24.1%</span>: five times the error rate
+        the team believes it is running.</p>
+      </div>
+      <div class="step" data-step="2">
+        <h3>Why it inflates</h3>
+        <p>Each look is another draw from the noise. The daily z-statistics
+        are correlated, so it is not 14 independent 5% chances, but the
+        maximum of 14 correlated tests still crosses 1.96 far more often
+        than one test does. More looks, more chances; the curve only ever
+        goes up.</p>
+      </div>
+      <div class="step" data-step="3">
+        <h3>Price the looks in advance</h3>
+        <p>The fix is not "stop peeking", it is peeking with a budget.
+        A Lan-DeMets alpha-spending boundary raises the bar for early looks:
+        day one demands |z| &gt; <span class="number">8.03</span>, day seven
+        <span class="number">3.01</span>, day fourteen
+        <span class="number">2.10</span>, so the whole 14-look family spends
+        exactly 0.05. Early stops are still allowed; they just require
+        early-stop evidence.</p>
+      </div>
+      <div class="step" data-step="4">
+        <h3>Same data, honest error rate</h3>
+        <p>Apply that boundary to the same 4,000 experiments: the daily-peek
+        false positive rate comes back to
+        <span class="number">4.95%</span>, on the promise. And when a real
+        effect exists, the boundary still stops early, so the cost of
+        honesty is small.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="column">
+    <h2>The memo you write instead</h2>
+    <div class="memo">
+      <div class="label">Recommendation</div>
+      <p>Keep the daily dashboard, but pre-commit an O'Brien-Fleming
+      alpha-spending boundary for the daily looks; do not stop on a raw
+      p &lt; 0.05. Under daily uncorrected checks, 24.1% of null experiments
+      would ship a false winner (measured over 4,000 simulated runs); the
+      boundary restores the nominal 5% while preserving early stopping for
+      real effects.</p>
+    </div>
+    <p class="secondary">
+      Method note: the boundary is computed with the Lan-DeMets alpha-spending
+      approach (Lan and DeMets, "Discrete sequential boundaries for clinical
+      trials", Biometrika 70(3), 1983) using an O'Brien-Fleming-type spending
+      function, and the implementation is validated against published
+      reference values in
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/tests/unit/test_sequential.py">tests/unit/test_sequential.py</a>.
+    </p>
+    <div class="disclosure">
+      Synthetic data, fictional product. Regenerate everything on this page
+      with <code>python scripts/regenerate_figures.py</code>.
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="column">
+    <a href="../index.html">All explainers</a>
+  </div>
+</footer>
+
+<script src="../assets/vendor/d3.v7.min.js"></script>
+<script src="../assets/data/peeking.js"></script>
+<script>
+(function () {
+  const data = window.LAB_DATA["peeking"];
+  const days = data.days;
+  const naive = data.naive_cumulative_fpr;
+  const seq = data.sequential_cumulative_fpr;
+
+  const css = getComputedStyle(document.documentElement);
+  const C = {
+    naive: css.getPropertyValue("--naive").trim(),
+    corrected: css.getPropertyValue("--corrected").trim(),
+    muted: css.getPropertyValue("--ink-muted").trim(),
+    grid: css.getPropertyValue("--grid").trim(),
+    ink: css.getPropertyValue("--ink-secondary").trim(),
+    baseline: css.getPropertyValue("--baseline").trim(),
+  };
+
+  const W = 420, H = 320, M = { top: 18, right: 52, bottom: 40, left: 44 };
+  const svg = d3.select("#chart");
+  const x = d3.scaleLinear().domain([1, 14]).range([M.left, W - M.right]);
+  const yRate = d3.scaleLinear().domain([0, 0.3]).range([H - M.bottom, M.top]);
+  const yZ = d3.scaleLinear().domain([0, 9]).range([H - M.bottom, M.top]);
+
+  // Axes and grid.
+  const gx = svg.append("g").attr("transform", `translate(0,${H - M.bottom})`);
+  gx.call(d3.axisBottom(x).ticks(7).tickSize(0).tickPadding(8));
+  const gy = svg.append("g").attr("transform", `translate(${M.left},0)`);
+  const gGrid = svg.append("g");
+
+  svg.append("text").attr("x", (M.left + W - M.right) / 2).attr("y", H - 6)
+    .attr("text-anchor", "middle").attr("font-size", 11).attr("fill", C.muted)
+    .text("day of experiment");
+  const yLabel = svg.append("text")
+    .attr("transform", `translate(12,${(M.top + H - M.bottom) / 2}) rotate(-90)`)
+    .attr("text-anchor", "middle").attr("font-size", 11).attr("fill", C.muted);
+
+  function drawYAxis(scale, fmt) {
+    gy.call(d3.axisLeft(scale).ticks(6).tickFormat(fmt).tickSize(0).tickPadding(6));
+    gy.selectAll(".domain").attr("stroke", C.baseline);
+    gGrid.selectAll("line").data(scale.ticks(6)).join("line")
+      .attr("x1", M.left).attr("x2", W - M.right)
+      .attr("y1", d => scale(d)).attr("y2", d => scale(d))
+      .attr("stroke", C.grid).attr("stroke-width", 0.7);
+    gGrid.lower();
+  }
+  gx.selectAll(".domain").attr("stroke", C.baseline);
+  gx.selectAll("text").attr("fill", C.muted);
+
+  const line = (scale, series) => d3.line()
+    .x((d, i) => x(days[i])).y(d => scale(d))(series);
+
+  const layerRate = svg.append("g");
+  const layerZ = svg.append("g").attr("opacity", 0);
+
+  // Rate view elements.
+  const alphaLine = layerRate.append("line")
+    .attr("x1", M.left).attr("x2", W - M.right)
+    .attr("y1", yRate(0.05)).attr("y2", yRate(0.05))
+    .attr("stroke", C.muted).attr("stroke-dasharray", "5 4");
+  layerRate.append("text").attr("x", M.left + 4).attr("y", yRate(0.05) - 6)
+    .attr("font-size", 11).attr("fill", C.ink).text("the 5% the team believes it is running");
+
+  const naivePath = layerRate.append("path")
+    .attr("fill", "none").attr("stroke", C.naive).attr("stroke-width", 2.5)
+    .attr("d", line(yRate, naive));
+  const naiveLen = naivePath.node().getTotalLength();
+  naivePath.attr("stroke-dasharray", naiveLen).attr("stroke-dashoffset", naiveLen);
+
+  const naiveEnd = layerRate.append("text")
+    .attr("x", x(14) + 5).attr("y", yRate(naive[13]) + 4)
+    .attr("font-size", 12).attr("font-weight", 600).attr("fill", C.naive)
+    .attr("opacity", 0).text((naive[13] * 100).toFixed(1) + "%");
+
+  const seqPath = layerRate.append("path")
+    .attr("fill", "none").attr("stroke", C.corrected).attr("stroke-width", 2.5)
+    .attr("d", line(yRate, seq)).attr("opacity", 0);
+  const seqEnd = layerRate.append("text")
+    .attr("x", x(14) + 5).attr("y", yRate(seq[13]) + 4)
+    .attr("font-size", 12).attr("font-weight", 600).attr("fill", C.corrected)
+    .attr("opacity", 0).text((seq[13] * 100).toFixed(2) + "%");
+
+  // Boundary view elements.
+  layerZ.append("path")
+    .attr("fill", "none").attr("stroke", C.corrected).attr("stroke-width", 2.5)
+    .attr("d", line(yZ, data.boundaries));
+  layerZ.selectAll("circle").data(data.boundaries).join("circle")
+    .attr("cx", (d, i) => x(days[i])).attr("cy", d => yZ(d)).attr("r", 3.5)
+    .attr("fill", C.corrected);
+  layerZ.append("line")
+    .attr("x1", M.left).attr("x2", W - M.right)
+    .attr("y1", yZ(data.z_crit)).attr("y2", yZ(data.z_crit))
+    .attr("stroke", C.naive).attr("stroke-dasharray", "5 4");
+  layerZ.append("text").attr("x", M.left + 4).attr("y", yZ(data.z_crit) - 6)
+    .attr("font-size", 11).attr("fill", C.naive)
+    .text("the bar the PM was using (1.96, every day)");
+  layerZ.append("text").attr("x", x(3)).attr("y", yZ(data.boundaries[1]) - 10)
+    .attr("font-size", 11).attr("fill", C.corrected)
+    .text("what early stopping should cost");
+
+  const caption = document.getElementById("caption");
+
+  const states = [
+    // 0: contract
+    () => {
+      showRate("false positive rate so far");
+      naivePath.transition().duration(400).attr("stroke-dashoffset", naiveLen);
+      naiveEnd.transition().duration(200).attr("opacity", 0);
+      seqPath.transition().duration(200).attr("opacity", 0);
+      seqEnd.transition().duration(200).attr("opacity", 0);
+      caption.textContent = "4,000 simulated 14-day experiments, no true effect, one look per day.";
+    },
+    // 1: naive curve draws in
+    () => {
+      showRate("false positive rate so far");
+      naivePath.transition().duration(1600).ease(d3.easeCubicOut)
+        .attr("stroke-dashoffset", 0);
+      naiveEnd.transition().delay(1400).duration(300).attr("opacity", 1);
+      seqPath.transition().duration(200).attr("opacity", 0);
+      seqEnd.transition().duration(200).attr("opacity", 0);
+      caption.textContent = "Share of null experiments already called significant, stopping at the first p < 0.05.";
+    },
+    // 2: hold, emphasize gap
+    () => {
+      showRate("false positive rate so far");
+      naivePath.attr("stroke-dashoffset", 0);
+      naiveEnd.attr("opacity", 1);
+      caption.textContent = "The gap between the red curve and the dashed line is manufactured significance.";
+    },
+    // 3: boundary view
+    () => {
+      layerRate.transition().duration(400).attr("opacity", 0);
+      layerZ.transition().duration(400).attr("opacity", 1);
+      drawYAxis(yZ, d3.format(".0f"));
+      yLabel.text("|z| needed to stop");
+      caption.textContent = "Lan-DeMets O'Brien-Fleming boundary: the evidence bar per day for the same overall 5%.";
+    },
+    // 4: back to rate view with sequential curve
+    () => {
+      showRate("false positive rate so far");
+      naivePath.attr("stroke-dashoffset", 0);
+      naiveEnd.attr("opacity", 1);
+      seqPath.transition().duration(700).attr("opacity", 1);
+      seqEnd.transition().delay(500).duration(300).attr("opacity", 1);
+      caption.textContent = "Same 4,000 experiments: the boundary holds the family at 4.95%.";
+    },
+  ];
+
+  function showRate(label) {
+    layerRate.transition().duration(400).attr("opacity", 1);
+    layerZ.transition().duration(400).attr("opacity", 0);
+    drawYAxis(yRate, d3.format(".0%"));
+    yLabel.text(label);
+  }
+
+  states[0]();
+
+  const steps = document.querySelectorAll(".step");
+  const observer = new IntersectionObserver(
+    entries => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          steps.forEach(s => s.classList.remove("active"));
+          entry.target.classList.add("active");
+          states[+entry.target.dataset.step]();
+        }
+      }
+    },
+    { rootMargin: "-45% 0px -45% 0px" }
+  );
+  steps.forEach(s => observer.observe(s));
+})();
+</script>
+
+</body>
+</html>

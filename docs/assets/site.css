@@ -1,0 +1,192 @@
+/* Shared site styles. One concept per page, generous whitespace,
+   the visual is the argument. Palette from src/lab/reporting/style.py
+   so the site and the matplotlib figures read as one system. */
+
+:root {
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-secondary: #52514e;
+  --ink-muted: #898781;
+  --grid: #e1e0d9;
+  --baseline: #c3c2b7;
+  --naive: #e34948;
+  --corrected: #2a78d6;
+  --secondary: #1baf7a;
+  --border: rgba(11, 11, 11, 0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.65;
+  font-size: 1.0625rem;
+}
+
+.column {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+header.hero {
+  padding: 5rem 0 3rem;
+  border-bottom: 1px solid var(--grid);
+  background: var(--surface);
+}
+
+header.hero h1 {
+  font-size: 2.4rem;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+header.hero .deck {
+  color: var(--ink-secondary);
+  font-size: 1.2rem;
+  max-width: 36rem;
+}
+
+header.hero .meta {
+  margin-top: 1.5rem;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+main { padding: 3rem 0 6rem; }
+
+h2 {
+  font-size: 1.5rem;
+  margin: 3rem 0 1rem;
+  letter-spacing: -0.01em;
+}
+
+p { margin: 1rem 0; }
+p.secondary { color: var(--ink-secondary); }
+
+a { color: var(--corrected); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--grid);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.explainer-list { list-style: none; margin: 1.5rem 0; }
+
+.explainer-list li {
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+}
+
+.explainer-list .title { font-weight: 600; }
+.explainer-list .blurb { color: var(--ink-secondary); font-size: 0.95rem; }
+.explainer-list li.planned { opacity: 0.55; }
+.explainer-list li.planned .title::after {
+  content: " (in progress)";
+  color: var(--ink-muted);
+  font-weight: 400;
+  font-size: 0.85em;
+}
+
+.disclosure {
+  margin-top: 3rem;
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--baseline);
+  color: var(--ink-secondary);
+  font-size: 0.95rem;
+}
+
+/* Scrollytelling layout: sticky graphic, steps scroll past it. */
+
+.scrolly {
+  display: grid;
+  grid-template-columns: minmax(20rem, 26rem) 1fr;
+  gap: 3rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+.scrolly .steps { padding: 40vh 0 30vh; }
+
+.step {
+  margin-bottom: 55vh;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  opacity: 0.35;
+  transition: opacity 0.3s ease;
+  max-width: 24rem;
+}
+
+.step.active { opacity: 1; box-shadow: 0 2px 12px rgba(11, 11, 11, 0.06); }
+.step h3 { font-size: 1.05rem; margin-bottom: 0.5rem; }
+.step p { margin: 0.5rem 0 0; font-size: 0.98rem; color: var(--ink-secondary); }
+.step .number { color: var(--ink); font-weight: 600; }
+
+.graphic {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.graphic figure {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.graphic figcaption {
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+svg text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+
+.memo {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--corrected);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+}
+
+.memo .label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  margin-bottom: 0.5rem;
+}
+
+footer {
+  border-top: 1px solid var(--grid);
+  padding: 2rem 0 4rem;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 54rem) {
+  .scrolly { grid-template-columns: 1fr; gap: 0; }
+  .graphic { position: sticky; top: 0; height: auto; padding: 0.75rem 0; z-index: 2; background: var(--page); }
+  .scrolly .steps { padding-top: 2rem; }
+  .step { margin-bottom: 40vh; max-width: none; }
+}
