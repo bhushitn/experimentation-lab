@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network effects: when your control group is contaminated by design</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="column">
+    <p class="meta"><a href="../index.html">Experimentation Lab</a> / explainer 3 of 8</p>
+    <h1>Network effects: when your control group is contaminated by design</h1>
+    <p class="deck">
+      A short-video app tests a share-to-friends prompt. Treated users send
+      clips into their follow graph, so control users' feeds change too. The
+      experiment is measuring a launch that leaks.
+    </p>
+    <p class="meta">
+      Simulated on a 20,000-user social graph (100 clusters), direct effect
+      0.5, spillover 0.3, so the global launch effect is 0.8.
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/src/lab/pathologies/interference.py">Reproduce this figure</a>.
+    </p>
+  </div>
+</header>
+
+<main>
+  <section class="scrolly">
+    <div class="graphic">
+      <figure>
+        <svg id="chart" viewBox="0 0 420 320" role="img"
+             aria-label="User-level versus cluster randomization against the global treatment effect"></svg>
+        <figcaption id="caption">The question a launch decision needs answered: everyone treated versus no one treated.</figcaption>
+        <noscript><img src="../assets/figures/interference.svg" alt="Static figure:
+          user randomization estimates 0.52, cluster randomization 0.83, global effect 0.80"
+          style="max-width:100%"></noscript>
+      </figure>
+    </div>
+    <div class="steps">
+      <div class="step" data-step="0">
+        <h3>The number the decision needs</h3>
+        <p>Launching means everyone gets the prompt. The launch effect is
+        direct effect plus spillover: <span class="number">0.8</span> in this
+        simulation, set by construction. The dashed line is that target. The
+        experiment's job is to estimate it.</p>
+      </div>
+      <div class="step" data-step="1">
+        <h3>Randomize users, get the wrong number</h3>
+        <p>Under user-level randomization the estimator reads
+        <span class="number">0.52</span>: the direct effect and essentially
+        none of the spillover. This is not noise, and more sample will not
+        fix it; the average of a bigger sample converges to the same wrong
+        number.</p>
+      </div>
+      <div class="step" data-step="2">
+        <h3>Why: both arms have the same neighbors</h3>
+        <p>With half of all users treated, a treated user's friends are about
+        50% treated, and so are a control user's. The spillover hits both
+        arms equally and subtracts out of the contrast: the measured exposure
+        gap between arms is <span class="number">0.003</span>. Control is not
+        untreated; it is half-treated by design.</p>
+      </div>
+      <div class="step" data-step="3">
+        <h3>Randomize the graph, not the user</h3>
+        <p>Assign whole friend-clusters to one arm and treated users live in
+        mostly-treated neighborhoods (exposure gap
+        <span class="number">0.95</span>). The same estimator now reads
+        <span class="number">0.83</span>, within noise of the 0.8 target,
+        degraded only by the few edges that cross clusters.</p>
+      </div>
+      <div class="step" data-step="4">
+        <h3>The price and the rule</h3>
+        <p>Cluster randomization costs power: the effective sample size is
+        closer to the number of clusters than the number of users, so size
+        the experiment on clusters. The rule: if the feature moves anything
+        between users (sharing, messaging, matching, marketplaces), decide
+        the randomization unit before launch, not in the readout.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="column">
+    <h2>The memo you write instead</h2>
+    <div class="memo">
+      <div class="label">Recommendation</div>
+      <p>Randomize follow-graph clusters, not users, and size on the number
+      of clusters. Under user-level randomization this experiment would read
+      0.52 against a true launch effect of 0.80, missing the spillover
+      entirely (measured on a simulated graph where the truth is set by
+      construction); cluster randomization recovers 0.83.</p>
+    </div>
+    <div class="disclosure">
+      Synthetic data, fictional product. Regenerate with
+      <code>python scripts/regenerate_figures.py</code>.
+    </div>
+  </div>
+</main>
+
+<footer><div class="column"><a href="../index.html">All explainers</a></div></footer>
+
+<script src="../assets/vendor/d3.v7.min.js"></script>
+<script src="../assets/data/interference.js"></script>
+<script src="../assets/explainer.js"></script>
+<script>
+(function () {
+  const d = window.LAB_DATA["interference"];
+  const E = window.LabExplainer;
+  const ch = E.chart("#chart", {});
+  const names = ["randomize users", "randomize clusters"];
+  const x = ch.xBand(names);
+  const y = ch.y([0, 1.0]);
+  ch.axes(x, y, { yLabel: "estimated treatment effect" });
+  ch.truthLine(y, d.global_treatment_effect,
+    `launch effect = ${d.global_treatment_effect.toFixed(2)}`);
+  const est = d.estimates;
+  const bars = ch.bars(x, y, [
+    { name: names[0], value: est[0], color: E.C.naive, label: est[0].toFixed(2) },
+    { name: names[1], value: est[1], color: E.C.corrected, label: est[1].toFixed(2) },
+  ]);
+  E.scroller([
+    { enter: () => bars.show([]),
+      caption: "The dashed line is the all-treated versus none-treated effect, known by construction." },
+    { enter: () => bars.show([names[0]]),
+      caption: "User-level randomization: the estimate converges to the wrong number." },
+    { enter: () => bars.show([names[0]]),
+      caption: "Both arms sit at ~50% treated neighbors, so the spillover cancels out of the contrast." },
+    { enter: () => bars.show(names),
+      caption: "Cluster randomization pushes the exposure contrast to 0.95 and recovers the launch effect." },
+    { enter: () => bars.show(names),
+      caption: "Size on clusters, and pick the randomization unit before launch." },
+  ], { caption: "caption" });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What randomization actually buys you</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="column">
+    <p class="meta"><a href="../index.html">Experimentation Lab</a> / explainer 2 of 8</p>
+    <h1>What randomization actually buys you</h1>
+    <p class="deck">
+      A short-video app ships a new creation tool behind a toggle and, a month
+      later, compares users who adopted it to users who did not. Adopters
+      create twice as much. The tool is credited. The tool did a quarter of
+      that.
+    </p>
+    <p class="meta">
+      Simulated population of 100,000 users with the true effect fixed at 0.50.
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/src/lab/reporting/explainer_data.py">Reproduce this figure</a>.
+    </p>
+  </div>
+</header>
+
+<main>
+  <section class="scrolly">
+    <div class="graphic">
+      <figure>
+        <svg id="chart" viewBox="0 0 420 320" role="img"
+             aria-label="Observational versus randomized estimate against the true effect"></svg>
+        <figcaption id="caption">One population, one feature, two ways to measure it.</figcaption>
+        <noscript><img src="../assets/figures/randomization.svg" alt="Static figure:
+          observational estimate 1.94 versus randomized estimate 0.47, true effect 0.50"
+          style="max-width:100%"></noscript>
+      </figure>
+    </div>
+    <div class="steps">
+      <div class="step" data-step="0">
+        <h3>Compare adopters to everyone else</h3>
+        <p>The natural first analysis: mean outcome of users who adopted the
+        tool minus mean outcome of users who did not. It reads
+        <span class="number">1.94</span>. The true effect, set by construction
+        in this simulation, is <span class="number">0.50</span>. The estimate
+        is almost four times the truth.</p>
+      </div>
+      <div class="step" data-step="1">
+        <h3>The gap was there before launch</h3>
+        <p>Adoption was not a coin flip: in this population the probability of
+        adopting rises with a user's baseline activity, which is how real
+        feature adoption behaves. Heavy users adopt more and also create more
+        with or without the tool. That pre-existing gap,
+        <span class="number">1.43</span> here and computable exactly from the
+        simulated population, rides into the comparison as if the tool caused
+        it.</p>
+      </div>
+      <div class="step" data-step="2">
+        <h3>Flip a coin instead</h3>
+        <p>Randomize the same users and the two groups have the same baseline
+        mix by construction; nothing pre-existing can hide in the contrast.
+        The randomized estimate is <span class="number">0.47</span>, noise
+        away from the true 0.50. This is the entire purchase: assignment
+        independent of everything about the user, known and unknown.</p>
+      </div>
+      <div class="step" data-step="3">
+        <h3>What it cannot fix</h3>
+        <p>Randomization guarantees comparable groups at assignment. It does
+        not guarantee the assignment is what users experience
+        (<a href="../index.html">contamination</a>), that one user's treatment
+        stays out of another user's outcome
+        (<a href="interference.html">network effects</a>), or that the
+        experimenter reads the result honestly
+        (<a href="peeking.html">peeking</a>). Those failures each get their
+        own page and their own number.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="column">
+    <h2>The memo you write instead</h2>
+    <div class="memo">
+      <div class="label">Recommendation</div>
+      <p>Do not report the adopter-versus-non-adopter comparison as the
+      feature's effect; in a simulated population with the truth fixed at
+      0.50, that comparison reads 1.94 because adoption correlates with
+      baseline activity. Run the randomized experiment; it recovers 0.47 on
+      the same population.</p>
+    </div>
+    <div class="disclosure">
+      Synthetic data, fictional product. Regenerate with
+      <code>python scripts/regenerate_figures.py</code>.
+    </div>
+  </div>
+</main>
+
+<footer><div class="column"><a href="../index.html">All explainers</a></div></footer>
+
+<script src="../assets/vendor/d3.v7.min.js"></script>
+<script src="../assets/data/randomization.js"></script>
+<script src="../assets/explainer.js"></script>
+<script>
+(function () {
+  const d = window.LAB_DATA["randomization"];
+  const E = window.LabExplainer;
+  const ch = E.chart("#chart", {});
+  const x = ch.xBand(["adopters vs rest", "randomized"]);
+  const y = ch.y([0, 2.2]);
+  ch.axes(x, y, { yLabel: "estimated effect of the tool" });
+  ch.truthLine(y, d.true_effect, `true effect = ${d.true_effect.toFixed(2)}`);
+  const bars = ch.bars(x, y, [
+    { name: "adopters vs rest", value: d.observational, color: E.C.naive,
+      label: d.observational.toFixed(2) },
+    { name: "randomized", value: d.randomized, color: E.C.corrected,
+      label: d.randomized.toFixed(2) },
+  ]);
+  E.scroller([
+    { enter: () => bars.show(["adopters vs rest"]),
+      caption: "The observational comparison: users who adopted versus users who did not." },
+    { enter: () => bars.show(["adopters vs rest"]),
+      caption: "The pre-launch gap between adopters and non-adopters is 1.43 of the 1.94." },
+    { enter: () => bars.show(["adopters vs rest", "randomized"]),
+      caption: "Randomized assignment on the same population recovers the truth." },
+    { enter: () => bars.show(["adopters vs rest", "randomized"]),
+      caption: "Randomization fixes selection. Contamination, interference, and peeking are separate failures." },
+  ], { caption: "caption" });
+})();
+</script>
+
+</body>
+</html>

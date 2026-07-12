@@ -1,0 +1,50 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check src tests scripts eval
+      - run: mypy src
+      - run: pytest tests/ -q
+
+  reproducibility:
+    # The repository's central claim is that every figure and number
+    # regenerates from committed code. This job regenerates everything from
+    # the fixed seeds and fails if the headline numbers drift from the
+    # committed ones.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: Regenerate all figures and data
+        run: PYTHONPATH=src python scripts/regenerate_figures.py --outdir /tmp/regen
+      - name: Compare regenerated headline numbers to committed ones
+        run: |
+          python - <<'EOF'
+          import json, math, sys
+          committed = json.load(open("docs/assets/data/headline_results.json"))
+          fresh = json.load(open("/tmp/regen/data/headline_results.json"))
+          bad = [k for k in committed
+                 if not math.isclose(committed[k], fresh[k], rel_tol=1e-9)]
+          if bad:
+              sys.exit(f"headline numbers drifted from committed values: {bad}")
+          print(f"{len(committed)} headline numbers match the committed values")
+          EOF
+      - name: Rebuild and execute notebooks
+        run: PYTHONPATH=src python scripts/build_notebooks.py

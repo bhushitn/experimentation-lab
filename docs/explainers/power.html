@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Power, MDE, and how long to run</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="column">
+    <p class="meta"><a href="../index.html">Experimentation Lab</a> / explainer 7 of 8</p>
+    <h1>Power, MDE, and how long to run</h1>
+    <p class="deck">
+      "Let's run it two weeks and see" is a sample size decision made by a
+      calendar. The arithmetic takes five minutes and tells you before launch
+      whether the experiment can answer its own question.
+    </p>
+    <p class="meta">
+      Calculator output for a 10% baseline signup rate; the calculators are
+      validated against statsmodels.
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/src/lab/stats/power.py">Reproduce this figure</a>.
+    </p>
+  </div>
+</header>
+
+<main>
+  <section class="scrolly">
+    <div class="graphic">
+      <figure>
+        <svg id="chart" viewBox="0 0 420 320" role="img"
+             aria-label="Power against sample size, and minimum detectable effect against runtime"></svg>
+        <figcaption id="caption">Power to detect a lift on a 10% baseline signup rate.</figcaption>
+        <noscript><img src="../assets/figures/power.svg" alt="Static figure:
+          power curves against sample size for three lift sizes" style="max-width:100%"></noscript>
+      </figure>
+    </div>
+    <div class="steps">
+      <div class="step" data-step="0">
+        <h3>Power is a curve, not a vibe</h3>
+        <p>Fix the lift you care about, a 1-point lift on a 10% signup rate,
+        and power is a function of sample size alone. It crosses the standard
+        80% bar at about <span class="number">14,000</span> users per arm.
+        Below that, a real effect more often than not fails to reach
+        significance; the experiment is designed to shrug.</p>
+      </div>
+      <div class="step" data-step="1">
+        <h3>Halve the effect, quadruple the bill</h3>
+        <p>Required sample scales with one over the effect squared. Half the
+        lift (0.5 points) needs about <span class="number">56,000</span> per
+        arm, four times as much; double the lift (2 points) needs about
+        <span class="number">3,500</span>. This is why "we'll detect whatever
+        is there" is not a plan: whatever is there has a price, and small
+        effects are expensive.</p>
+      </div>
+      <div class="step" data-step="2">
+        <h3>Runtime is the same curve in disguise</h3>
+        <p>At 2,500 new users per arm per day, the minimum detectable effect
+        falls with the square root of runtime: after one week the experiment
+        can see a <span class="number">0.90</span>-point lift, after four
+        weeks <span class="number">0.45</span>. The first week buys the most
+        sensitivity; every week after buys less than the one before.</p>
+      </div>
+      <div class="step" data-step="3">
+        <h3>Decide the effect first</h3>
+        <p>The business question comes first: what is the smallest lift worth
+        shipping and maintaining? That number plus the traffic sets the
+        runtime, before launch, on paper. If the runtime comes out at a
+        quarter, the answer is not to run it two weeks anyway; it is a bigger
+        treatment, a more sensitive metric, or
+        <a href="cuped.html">CUPED</a>, which buys back sample size for
+        free. And the runtime must clear the
+        <a href="decision.html">novelty window</a>, not just the power bar.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="column">
+    <h2>The memo you write instead</h2>
+    <div class="memo">
+      <div class="label">Recommendation</div>
+      <p>Size the test to the smallest lift worth shipping: for a 1-point
+      lift on the 10% signup rate, that is roughly 14,000 users per arm
+      (5.6 days at current traffic); do not launch the 0.5-point version
+      without 56,000 per arm or a variance-reduction plan. Sample
+      requirements below are calculator output validated against
+      statsmodels, not simulation.</p>
+    </div>
+    <div class="disclosure">
+      Synthetic parameters, fictional product. Regenerate with
+      <code>python scripts/regenerate_figures.py</code>.
+    </div>
+  </div>
+</main>
+
+<footer><div class="column"><a href="../index.html">All explainers</a></div></footer>
+
+<script src="../assets/vendor/d3.v7.min.js"></script>
+<script src="../assets/data/power.js"></script>
+<script src="../assets/explainer.js"></script>
+<script>
+(function () {
+  const d = window.LAB_DATA["power"];
+  const E = window.LabExplainer;
+  const ch = E.chart("#chart", {});
+
+  // Layer A: power vs n (log x), three curves.
+  const layerA = ch.svg.append("g");
+  const xA = ch.xLog([d.n_per_arm[0], d.n_per_arm[d.n_per_arm.length - 1]]);
+  const yA = ch.y([0, 1.0]);
+  const colors = { "0.005": E.C.naive, "0.010": E.C.corrected, "0.020": E.C.secondary };
+  const lines = {};
+  for (const [lift, curve] of Object.entries(d.curves)) {
+    const path = layerA.append("path")
+      .attr("fill", "none").attr("stroke", colors[lift]).attr("stroke-width", 2.5)
+      .attr("d", d3.line().x((v, i) => xA(d.n_per_arm[i])).y(v => yA(v))(curve))
+      .attr("opacity", 0);
+    layerA.append("text")
+      .attr("x", ch.W - ch.M.right + 4)
+      .attr("y", yA(curve[curve.length - 1]) + 4)
+      .attr("font-size", 11).attr("font-weight", 600).attr("fill", colors[lift])
+      .attr("opacity", 0).attr("class", "lift-label")
+      .attr("data-lift", lift)
+      .text("+" + (parseFloat(lift) * 100).toFixed(1) + "pt");
+    lines[lift] = path;
+  }
+
+  // Layer B: MDE vs days.
+  const layerB = ch.svg.append("g").attr("opacity", 0);
+  const xB = ch.xLinear([1, d.days[d.days.length - 1]]);
+  const yB = ch.y([0, Math.max(...d.mde_by_day) * 105]);
+  layerB.append("path")
+    .attr("fill", "none").attr("stroke", E.C.corrected).attr("stroke-width", 2.5)
+    .attr("d", d3.line().x((v, i) => xB(d.days[i])).y(v => yB(v * 100))(d.mde_by_day));
+  [[7, "1 week"], [28, "4 weeks"]].forEach(([day, label]) => {
+    const v = d.mde_by_day[day - 1] * 100;
+    layerB.append("circle").attr("cx", xB(day)).attr("cy", yB(v)).attr("r", 4)
+      .attr("fill", E.C.corrected);
+    layerB.append("text").attr("x", xB(day) + 6).attr("y", yB(v) - 8)
+      .attr("font-size", 11).attr("font-weight", 600).attr("fill", E.C.ink)
+      .text(`${label}: ${v.toFixed(2)}pt`);
+  });
+
+  function viewA(liftsVisible) {
+    layerB.transition().duration(400).attr("opacity", 0);
+    layerA.transition().duration(400).attr("opacity", 1);
+    ch.axes(xA, yA, { xLabel: "users per arm (log scale)", yLabel: "power",
+                      yFmt: d3.format(".0%"), xTicks: 5, xFmt: "~s" });
+    for (const [lift, path] of Object.entries(lines)) {
+      path.transition().duration(500)
+        .attr("opacity", liftsVisible.includes(lift) ? 1 : 0);
+    }
+    layerA.selectAll(".lift-label").transition().duration(500)
+      .attr("opacity", function () {
+        return liftsVisible.includes(this.dataset.lift) ? 1 : 0;
+      });
+  }
+
+  const eightyLine = ch.truthLine(yA, 0.8, "80% power");
+
+  E.scroller([
+    { enter: () => { eightyLine.attr("opacity", 1); viewA(["0.010"]); },
+      caption: "Power for a 1-point lift on a 10% baseline, alpha 0.05." },
+    { enter: () => { eightyLine.attr("opacity", 1); viewA(["0.005", "0.010", "0.020"]); },
+      caption: "Half the effect needs four times the sample." },
+    { enter: () => {
+        layerA.transition().duration(400).attr("opacity", 0);
+        eightyLine.transition().duration(300).attr("opacity", 0);
+        layerB.transition().duration(400).attr("opacity", 1);
+        ch.axes(xB, yB, { xLabel: "days of runtime at 2,500 users per arm per day",
+                          yLabel: "minimum detectable lift (points)" });
+      },
+      caption: "The same arithmetic as runtime: sensitivity grows with the square root of days." },
+    { enter: () => {},
+      caption: "Pick the smallest lift worth shipping; the calendar follows." },
+  ], { caption: "caption" });
+})();
+</script>
+
+</body>
+</html>

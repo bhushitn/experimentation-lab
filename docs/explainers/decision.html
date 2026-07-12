@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From p-value to decision</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="column">
+    <p class="meta"><a href="../index.html">Experimentation Lab</a> / explainer 8 of 8</p>
+    <h1>From p-value to decision</h1>
+    <p class="deck">
+      A short-video app redesigns its feed layout. Week one looks like a
+      triumph. This page runs the readout end to end, the way the launch
+      review should: what the number is, what broke it, and what to
+      recommend.
+    </p>
+    <p class="meta">
+      One simulated experiment: long-run effect 0.10, novelty spike 0.40
+      decaying over days, 20,000 users per arm.
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/src/lab/pathologies/novelty.py">Reproduce this figure</a>.
+    </p>
+  </div>
+</header>
+
+<main>
+  <section class="scrolly">
+    <div class="graphic">
+      <figure>
+        <svg id="chart" viewBox="0 0 420 320" role="img"
+             aria-label="Decaying treatment effect and what each readout window concludes"></svg>
+        <figcaption id="caption">The true effect path, known by construction.</figcaption>
+        <noscript><img src="../assets/figures/novelty.svg" alt="Static figure:
+          the decaying effect path and three readout windows" style="max-width:100%"></noscript>
+      </figure>
+    </div>
+    <div class="steps">
+      <div class="step" data-step="0">
+        <h3>The effect is a path, not a point</h3>
+        <p>A visible redesign gets attention that fades. In this simulation
+        the truth is set explicitly: a persistent effect of
+        <span class="number">0.10</span> plus a novelty spike of 0.40
+        decaying with a 5-day time constant. The launch decision is about
+        the plateau, because the plateau is what the company keeps.</p>
+      </div>
+      <div class="step" data-step="1">
+        <h3>What the impatient readout says</h3>
+        <p>Stop after week one and the estimate is
+        <span class="number">0.32</span>, highly significant, and mostly
+        novelty: a <span class="number">3.2x</span> overstatement of the
+        long-run effect. The p-value is not wrong; the estimate is real. It
+        is an accurate measurement of a temporary thing.</p>
+      </div>
+      <div class="step" data-step="2">
+        <h3>What the patient readout says</h3>
+        <p>Run four weeks and read the last seven days:
+        <span class="number">0.13</span>, sitting near the true plateau of
+        0.10. Even the full four-week average
+        (<span class="number">0.19</span>) still carries the spike. The
+        estimator that answers the launch question is the post-burn-in
+        window, and the runtime exists to make that window possible.</p>
+      </div>
+      <div class="step" data-step="3">
+        <h3>The memo carries the decision, not the p-value</h3>
+        <p>A readout is finished when someone who will not look at the chart
+        can act on it. The format that survives contact with a launch
+        review: recommendation first, effect in business units with its
+        interval, the validity threats checked and quantified, and what
+        evidence would change the answer. The full example is below.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="column">
+    <h2>The memo, in full</h2>
+    <div class="memo">
+      <div class="label">Recommendation</div>
+      <p>Ship the redesign, and set expectations at the plateau: a
+      sustained lift of about 0.13 units per user (post-burn-in window,
+      days 22 to 28), not the 0.32 the week-one readout suggested, which
+      was mostly novelty (measured against a constructed truth of 0.10
+      long-run plus a decaying spike).</p>
+      <div class="label" style="margin-top:1rem">Threats checked</div>
+      <p>Novelty: the week-1 estimate overstates the long-run effect 3.2x;
+      decision taken on the last-week window instead. Peeking: readout
+      points were pre-committed (day 14, day 28). Power: sized for the
+      plateau effect, not the spike.</p>
+      <div class="label" style="margin-top:1rem">What would change the answer</div>
+      <p>If the last-week estimate had kept falling week over week rather
+      than flattening, ship would become re-test with a longer horizon;
+      flat weeks 3 and 4 are what make the plateau claim credible.</p>
+    </div>
+    <p class="secondary">
+      This is also the memo format the repository's
+      <a href="https://github.com/bhushitn/experimentation-lab/tree/main/src/review_agent">review agent</a>
+      produces from a structured design, with every number pulled from these
+      same simulations.
+    </p>
+    <div class="disclosure">
+      Synthetic data, fictional product. Regenerate with
+      <code>python scripts/regenerate_figures.py</code>.
+    </div>
+  </div>
+</main>
+
+<footer><div class="column"><a href="../index.html">All explainers</a></div></footer>
+
+<script src="../assets/vendor/d3.v7.min.js"></script>
+<script src="../assets/data/novelty.js"></script>
+<script src="../assets/explainer.js"></script>
+<script>
+(function () {
+  const d = window.LAB_DATA["novelty"];
+  const E = window.LabExplainer;
+  const ch = E.chart("#chart", {});
+  const x = ch.xLinear([0, 34]);
+  const y = ch.y([0, Math.max(...d.effect_path) * 1.1]);
+  ch.axes(x, y, { xLabel: "days since launch", yLabel: "treatment effect" });
+  ch.truthLine(y, d.long_run_effect,
+    `long-run effect = ${d.long_run_effect.toFixed(2)}`);
+
+  const path = ch.animatedLine(x, y, d.days, d.effect_path, "#52514e");
+
+  const windows = [
+    { key: "first_week", d0: 0, d1: 6, color: E.C.naive, label: "week-1 readout" },
+    { key: "full_run", d0: 0, d1: 27, color: E.C.secondary, label: "4-week average" },
+    { key: "post_burn_in", d0: 21, d1: 27, color: E.C.corrected, label: "last-week readout" },
+  ];
+  const winEls = {};
+  for (const w of windows) {
+    const est = d.estimates[w.key];
+    const g = ch.svg.append("g").attr("opacity", 0);
+    g.append("line")
+      .attr("x1", x(w.d0)).attr("x2", x(w.d1))
+      .attr("y1", y(est)).attr("y2", y(est))
+      .attr("stroke", w.color).attr("stroke-width", 3.5);
+    g.append("text")
+      .attr("x", x(w.d1) + 5).attr("y", y(est) - 4)
+      .attr("font-size", 11).attr("font-weight", 600).attr("fill", w.color)
+      .text(`${w.label}: ${est.toFixed(2)}`);
+    winEls[w.key] = g;
+  }
+  function showWindows(keys) {
+    for (const [k, g] of Object.entries(winEls)) {
+      g.transition().duration(500).attr("opacity", keys.includes(k) ? 1 : 0);
+    }
+  }
+
+  E.scroller([
+    { enter: () => { path.draw(); showWindows([]); },
+      caption: "The true effect path: a 0.10 plateau under a decaying novelty spike." },
+    { enter: () => { path.show(); showWindows(["first_week"]); },
+      caption: "The week-1 estimate is significant, real, and temporary." },
+    { enter: () => { path.show(); showWindows(["first_week", "full_run", "post_burn_in"]); },
+      caption: "The post-burn-in window reads the plateau; the averages read the spike." },
+    { enter: () => showWindows(["first_week", "full_run", "post_burn_in"]),
+      caption: "The memo below turns the chart into a decision." },
+  ], { caption: "caption" });
+})();
+</script>
+
+</body>
+</html>

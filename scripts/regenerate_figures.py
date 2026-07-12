@@ -37,6 +37,18 @@ from lab.reporting import (
     fig_peeking,
     fig_subgroups,
 )
+from lab.reporting.explainer_data import (
+    build_cuped,
+    build_power_curves,
+    build_randomization,
+    build_test_choice,
+)
+from lab.reporting.explainer_figures import (
+    fig_cuped,
+    fig_power,
+    fig_randomization,
+    fig_test_choice,
+)
 
 
 def build_all() -> dict[str, tuple[Figure, dict[str, Any]]]:
@@ -76,6 +88,15 @@ def build_all() -> dict[str, tuple[Figure, dict[str, Any]]]:
     days = np.arange(28)
     path = effect_path(days, long_run=0.10, novelty_amplitude=0.40, decay_days=5.0)
     out["novelty"] = fig_novelty(nov, path_days=days, path=path)
+
+    rand_data = build_randomization()
+    out["randomization"] = (fig_randomization(rand_data), rand_data)
+    test_data = build_test_choice()
+    out["test_choice"] = (fig_test_choice(test_data), test_data)
+    cuped_data = build_cuped()
+    out["cuped"] = (fig_cuped(cuped_data), cuped_data)
+    power_data = build_power_curves()
+    out["power"] = (fig_power(power_data), power_data)
 
     return out
 

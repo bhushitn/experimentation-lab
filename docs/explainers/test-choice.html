@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choosing the right test</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="column">
+    <p class="meta"><a href="../index.html">Experimentation Lab</a> / explainer 5 of 8</p>
+    <h1>Choosing the right test</h1>
+    <p class="deck">
+      Welch's t, the two-proportion z, Mann-Whitney U. The folklore says
+      "ugly distribution, use the rank test." The folklore costs you a third
+      of your power on exactly the metric it is invoked for.
+    </p>
+    <p class="meta">
+      Distributions and powers measured on the engine's simulated metrics;
+      200 experiments of 20,000 users per arm for the power comparison.
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/src/lab/reporting/explainer_data.py">Reproduce this figure</a>.
+    </p>
+  </div>
+</header>
+
+<main>
+  <section class="scrolly">
+    <div class="graphic">
+      <figure>
+        <svg id="chart" viewBox="0 0 420 320" role="img"
+             aria-label="Metric distributions and test power comparison"></svg>
+        <figcaption id="caption">The engine's engagement-shaped metric.</figcaption>
+        <noscript><img src="../assets/figures/test_choice.svg" alt="Static figure:
+          metric distributions and the tests that fit them" style="max-width:100%"></noscript>
+      </figure>
+    </div>
+    <div class="steps">
+      <div class="step" data-step="0">
+        <h3>When the mean behaves</h3>
+        <p>Engagement-style metrics: roughly symmetric, tails under control.
+        Welch's t-test on the difference in means is the default and the
+        right one; it does not assume equal variances, and at experiment
+        sample sizes the central limit theorem does the rest. Binary metrics
+        are the same story with less variance bookkeeping: the
+        two-proportion z-test.</p>
+      </div>
+      <div class="step" data-step="1">
+        <h3>When it does not</h3>
+        <p>Revenue-shaped metrics: <span class="number">70%</span> of users
+        are exact zeros and the rest are drawn from a heavy right tail. The
+        histogram looks nothing like a bell, and the reflex is to reach for
+        Mann-Whitney because "the t-test needs normality." The t-test needs
+        normal <em>means</em>, and with 20,000 users per arm it has them.</p>
+      </div>
+      <div class="step" data-step="2">
+        <h3>The folklore, measured</h3>
+        <p>Give treatment a real effect: active users spend 25% more,
+        activity unchanged. On 200 simulated experiments, Welch's t detects
+        it in <span class="number">100%</span> of runs; Mann-Whitney in
+        <span class="number">68%</span>. The zeros are identical in both
+        arms, and identical values carry no rank information, so the rank
+        test throws away the 70% of the sample where nothing moved and
+        under-weights how much the spenders moved.</p>
+      </div>
+      <div class="step" data-step="3">
+        <h3>Ask what the decision needs</h3>
+        <p>Launch decisions are usually about totals: revenue per user,
+        minutes per user. Those are means, so test means, and use the
+        t-test's fragility budget where it belongs: run
+        <a href="cuped.html">CUPED</a> to cut variance, or a bootstrap CI
+        when n is genuinely small. Mann-Whitney answers a different
+        question ("does treatment shift the distribution?"): a fine
+        robustness check, a wrong drop-in replacement.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="column">
+    <h2>The memo you write instead</h2>
+    <div class="memo">
+      <div class="label">Recommendation</div>
+      <p>Decide on mean revenue per user with Welch's t-test and report
+      Mann-Whitney only as a robustness footnote. On this metric shape
+      (70% zeros, heavy tail) with a spend-scaling effect, the rank test's
+      measured power is 68% against the t-test's 100% (200 simulated
+      experiments, 20,000 users per arm), so making it the primary test
+      risks missing a real win a third of the time.</p>
+    </div>
+    <div class="disclosure">
+      Synthetic data, fictional product. Regenerate with
+      <code>python scripts/regenerate_figures.py</code>.
+    </div>
+  </div>
+</main>
+
+<footer><div class="column"><a href="../index.html">All explainers</a></div></footer>
+
+<script src="../assets/vendor/d3.v7.min.js"></script>
+<script src="../assets/data/test_choice.js"></script>
+<script src="../assets/explainer.js"></script>
+<script>
+(function () {
+  const d = window.LAB_DATA["test_choice"];
+  const E = window.LabExplainer;
+  const ch = E.chart("#chart", {});
+
+  // Two histogram layers plus a power-bars layer; states crossfade them.
+  function histLayer(hist, color, xLabel) {
+    const g = ch.svg.append("g").attr("opacity", 0);
+    const edges = hist.edges;
+    const xs = ch.xLinear([edges[0], edges[edges.length - 1]]);
+    const ys = ch.y([0, Math.max(...hist.density) * 1.15]);
+    g.selectAll("rect").data(hist.density).join("rect")
+      .attr("x", (v, i) => xs(edges[i]) + 0.5)
+      .attr("width", (v, i) => Math.max(0.5, xs(edges[i + 1]) - xs(edges[i]) - 1))
+      .attr("y", v => ys(v)).attr("height", v => ys(0) - ys(v))
+      .attr("fill", color);
+    g.append("text").attr("x", (ch.M.left + ch.W - ch.M.right) / 2)
+      .attr("y", ch.H - 6).attr("text-anchor", "middle")
+      .attr("font-size", 11).attr("fill", E.C.muted).text(xLabel);
+    return g;
+  }
+
+  const contLayer = histLayer(d.distributions.continuous, E.C.corrected,
+    "sessions-style metric");
+  const ziLayer = histLayer(d.distributions.zero_inflated, "#eda100",
+    "revenue-style metric (zeros clipped at 30)");
+
+  const powerLayer = ch.svg.append("g").attr("opacity", 0);
+  {
+    const names = ["Welch t", "Mann-Whitney U"];
+    const x = ch.xBand(names);
+    const y = ch.y([0, 1.1]);
+    const vals = [d.power_welch, d.power_mann_whitney];
+    const colors = [E.C.corrected, E.C.naive];
+    names.forEach((name, i) => {
+      powerLayer.append("rect")
+        .attr("x", x(name)).attr("width", x.bandwidth())
+        .attr("y", y(vals[i])).attr("height", y(0) - y(vals[i]))
+        .attr("rx", 3).attr("fill", colors[i]);
+      powerLayer.append("text")
+        .attr("x", x(name) + x.bandwidth() / 2).attr("y", y(vals[i]) - 6)
+        .attr("text-anchor", "middle").attr("font-size", 12)
+        .attr("font-weight", 600).attr("fill", colors[i])
+        .text((vals[i] * 100).toFixed(0) + "%");
+      powerLayer.append("text")
+        .attr("x", x(name) + x.bandwidth() / 2).attr("y", y(0) + 16)
+        .attr("text-anchor", "middle").attr("font-size", 11)
+        .attr("fill", E.C.muted).text(name);
+    });
+    powerLayer.append("text").attr("x", ch.M.left).attr("y", ch.M.top)
+      .attr("font-size", 11).attr("fill", E.C.ink)
+      .text("power to detect +25% spend among active users");
+  }
+
+  const layers = [contLayer, ziLayer, powerLayer];
+  function show(layer) {
+    layers.forEach(l => l.transition().duration(400).attr("opacity", l === layer ? 1 : 0));
+  }
+
+  E.scroller([
+    { enter: () => show(contLayer),
+      caption: "The engine's engagement-shaped metric: Welch's t-test territory." },
+    { enter: () => show(ziLayer),
+      caption: "The engine's revenue-shaped metric: 70% exact zeros, heavy right tail." },
+    { enter: () => show(powerLayer),
+      caption: "Same 200 experiments, same true effect, both tests." },
+    { enter: () => show(powerLayer),
+      caption: "Test the quantity the decision is about; for launch decisions that is usually the mean." },
+  ], { caption: "caption" });
+})();
+</script>
+
+</body>
+</html>

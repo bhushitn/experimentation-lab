@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The subgroup fishing expedition</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="column">
+    <p class="meta"><a href="../index.html">Experimentation Lab</a> / explainer 4 of 8</p>
+    <h1>The subgroup fishing expedition</h1>
+    <p class="deck">
+      The topline on a short-video app experiment is flat, so someone scans
+      the country breakdown and finds the effect is "significant in Brazil."
+      Here is how often Brazil shows up when the true effect is zero
+      everywhere.
+    </p>
+    <p class="meta">
+      4,000 simulated experiments, 20 segments each, every segment truly null.
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/src/lab/pathologies/subgroups.py">Reproduce this figure</a>.
+    </p>
+  </div>
+</header>
+
+<main>
+  <section class="scrolly">
+    <div class="graphic">
+      <figure>
+        <svg id="chart" viewBox="0 0 420 320" role="img"
+             aria-label="False subgroup discovery rates under fishing, pre-registration, and correction"></svg>
+        <figcaption id="caption">Every segment in every simulated experiment has a true effect of exactly zero.</figcaption>
+        <noscript><img src="../assets/figures/subgroups.svg" alt="Static figure:
+          scanning 20 segments finds a false subgroup in 63.8% of experiments"
+          style="max-width:100%"></noscript>
+      </figure>
+    </div>
+    <div class="steps">
+      <div class="step" data-step="0">
+        <h3>The temptation</h3>
+        <p>Twenty country segments sit in the dashboard. The topline is flat,
+        the quarter is ending, and each segment has its own p-value. Scanning
+        them feels like diligence. It is twenty chances at the same 5%
+        mistake.</p>
+      </div>
+      <div class="step" data-step="1">
+        <h3>Someone is always significant</h3>
+        <p>Scanning all 20 segments finds at least one "significant" subgroup
+        in <span class="number">63.8%</span> of these null experiments, and on
+        average produces <span class="number">1.0</span> false subgroup per
+        experiment. Whichever country it lands on gets the narrative: "the
+        feature works for Brazil."</p>
+      </div>
+      <div class="step" data-step="2">
+        <h3>It is multiple comparisons in a trench coat</h3>
+        <p>The arithmetic is the family-wise error rate: with 20 independent
+        null segments, the chance that at least one clears 0.05 is
+        1 - 0.95<sup>20</sup> = <span class="number">64.2%</span>. The
+        simulation lands on top of the formula. Nothing about segments makes
+        the problem special; it is many tests wearing one experiment's
+        credibility.</p>
+      </div>
+      <div class="step" data-step="3">
+        <h3>Pre-register or correct</h3>
+        <p>Name the decision-relevant segment before launch and its false
+        positive rate stays at <span class="number">5.0%</span>. Scan the
+        rest as exploratory with a Benjamini-Hochberg correction and the
+        family stays at <span class="number">5.2%</span>, the nominal level. A
+        subgroup found by fishing is a hypothesis for the next experiment,
+        not a launch argument for this one.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="column">
+    <h2>The memo you write instead</h2>
+    <div class="memo">
+      <div class="label">Recommendation</div>
+      <p>Do not launch on the Brazil segment. A post-hoc scan of 20 segments
+      finds at least one false "significant" subgroup in 63.8% of null
+      experiments (measured over 4,000 simulated runs), which makes this
+      finding indistinguishable from noise. Re-run with Brazil pre-registered
+      as the primary segment if the hypothesis is worth traffic.</p>
+    </div>
+    <p class="secondary">
+      Method note: Benjamini and Hochberg, "Controlling the False Discovery
+      Rate", JRSS-B 57(1), 1995; the implementation is validated against
+      statsmodels in
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/tests/unit/test_corrections.py">tests/unit/test_corrections.py</a>.
+    </p>
+    <div class="disclosure">
+      Synthetic data, fictional product. Regenerate with
+      <code>python scripts/regenerate_figures.py</code>.
+    </div>
+  </div>
+</main>
+
+<footer><div class="column"><a href="../index.html">All explainers</a></div></footer>
+
+<script src="../assets/vendor/d3.v7.min.js"></script>
+<script src="../assets/data/subgroups.js"></script>
+<script src="../assets/explainer.js"></script>
+<script>
+(function () {
+  const d = window.LAB_DATA["subgroups"];
+  const s = d.summary;
+  const E = window.LabExplainer;
+  const ch = E.chart("#chart", {});
+  const names = ["scan all 20", "pre-registered", "BH-corrected scan"];
+  const x = ch.xBand(names);
+  const y = ch.y([0, 0.75]);
+  ch.axes(x, y, { yLabel: "experiments with a false subgroup",
+                  yFmt: d3.format(".0%") });
+  ch.truthLine(y, 0.05, "nominal 5%");
+  const pct = v => (v * 100).toFixed(1) + "%";
+  const bars = ch.bars(x, y, [
+    { name: names[0], value: s.fishing_any_discovery, color: E.C.naive,
+      label: pct(s.fishing_any_discovery) },
+    { name: names[1], value: s.preregistered_primary_fpr, color: E.C.corrected,
+      label: pct(s.preregistered_primary_fpr) },
+    { name: names[2], value: s.bh_corrected_any_discovery, color: E.C.secondary,
+      label: pct(s.bh_corrected_any_discovery) },
+  ]);
+  E.scroller([
+    { enter: () => bars.show([]),
+      caption: "20 null segments per experiment, 4,000 experiments." },
+    { enter: () => bars.show([names[0]]),
+      caption: "Scan everything, report whatever clears 0.05." },
+    { enter: () => bars.show([names[0]]),
+      caption: "Theory says 1 - 0.95^20 = 64.2%; the simulation measures 63.8%." },
+    { enter: () => bars.show(names),
+      caption: "Pre-registration and correction keep the promise the p-value made." },
+  ], { caption: "caption" });
+})();
+</script>
+
+</body>
+</html>
