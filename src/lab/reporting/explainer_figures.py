@@ -96,3 +96,56 @@ def fig_power(data: dict[str, Any]) -> Figure:
     ax.legend(loc="lower right")
     fig.tight_layout()
     return fig
+
+
+def fig_srm(data: dict[str, Any]) -> Figure:
+    apply_style()
+    fig, ax = plt.subplots(figsize=(7, 4.2))
+    for frac, curve, color in [
+        ("100k", data["power_100k"], CORRECTED),
+        ("1M", data["power_1m"], SECONDARY),
+    ]:
+        ax.plot([f * 100 for f in data["drop_fractions"]], curve, color=color,
+                label=f"{frac} users per arm")
+    ax.axhline(0.999, color=TRUTH, linestyle="--", linewidth=1.2)
+    ax.set_xlabel("share of one arm silently dropped (%)")
+    ax.set_ylabel("probability the SRM alarm fires")
+    ax.set_title("The SRM check catches losses that outgrow sampling noise")
+    ax.legend(loc="lower right")
+    fig.tight_layout()
+    return fig
+
+
+def fig_switchback(data: dict[str, Any]) -> Figure:
+    apply_style()
+    fig, ax = plt.subplots(figsize=(7, 4.2))
+    w = [r["window_hours"] for r in data["by_window"]]
+    ax.plot(w, [r["naive_estimate"] for r in data["by_window"]], color=NAIVE,
+            marker="o", label="naive (all hours)")
+    ax.plot(w, [r["burn_in_estimate"] for r in data["by_window"]], color=CORRECTED,
+            marker="o", label="burn-in (drop first hour after switch)")
+    ax.axhline(data["true_effect"], color=TRUTH, linestyle="--", linewidth=1.5)
+    ax.set_xlabel("switch window length (hours)")
+    ax.set_ylabel("estimated effect")
+    ax.set_title("Switchbacks: carryover attenuates short windows")
+    ax.legend(loc="lower right")
+    fig.tight_layout()
+    return fig
+
+
+def fig_quasi(data: dict[str, Any]) -> Figure:
+    apply_style()
+    fig, ax = plt.subplots(figsize=(7, 4.2))
+    v = data["violated"]
+    periods = v["periods"]
+    ax.plot(periods, v["treated_mean"], color=CORRECTED, marker="o",
+            markersize=3, label="cities that launched")
+    ax.plot(periods, v["control_mean"], color=SECONDARY, marker="o",
+            markersize=3, label="cities that did not")
+    ax.axvline(data["launch_period"] - 0.5, color=TRUTH, linestyle="--", linewidth=1.2)
+    ax.set_xlabel("period (launch at the dashed line)")
+    ax.set_ylabel("metric, city-group mean")
+    ax.set_title("No randomization: the groups differ before the launch")
+    ax.legend(loc="upper left")
+    fig.tight_layout()
+    return fig

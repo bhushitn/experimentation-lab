@@ -13,7 +13,7 @@
     <h1>Experimentation Lab</h1>
     <p class="deck">
       A simulation engine where the true treatment effect is known by
-      construction, used to break A/B tests the six ways they break in
+      construction, used to break A/B tests the ways they break in
       production and measure the damage exactly.
     </p>
     <p class="meta">
@@ -64,6 +64,18 @@
       <li>
         <a href="explainers/decision.html"><span class="title">From p-value to decision</span></a>
         <div class="blurb">One experiment end to end: the novelty spike, the honest window, and the memo.</div>
+      </li>
+      <li>
+        <a href="explainers/srm.html"><span class="title">Sample ratio mismatch: the smoke alarm</span></a>
+        <div class="blurb">Assigned 50/50, logged 98,022 vs 100,000: invisible to the eye, decisive to the chi-square, and fatal to the readout.</div>
+      </li>
+      <li>
+        <a href="explainers/switchback.html"><span class="title">Switchbacks: testing when the marketplace is the unit</span></a>
+        <div class="blurb">One-hour windows understate the effect by 39% through carryover; day-long windows double the variance. Burn-in resolves it.</div>
+      </li>
+      <li>
+        <a href="explainers/quasi.html"><span class="title">When you cannot randomize</span></a>
+        <div class="blurb">Difference-in-differences recovers the truth under parallel trends and overstates it 2x when trends diverge; the placebo test tells you which world you are in.</div>
       </li>
     </ul>
 

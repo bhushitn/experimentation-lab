@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sample ratio mismatch: the smoke alarm</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="column">
+    <p class="meta"><a href="../index.html">Experimentation Lab</a> / explainers</p>
+    <h1>Sample ratio mismatch: the smoke alarm</h1>
+    <p class="deck">
+      Your A/B test assigned users 50/50. The logged data came back 49.5/50.5.
+      That half-percent is the most informative number in the readout, and
+      the correct response is not a correction. It is an investigation.
+    </p>
+    <p class="meta">
+      Simulated experiment with 100,000 users per arm and a logging bug that
+      silently drops 2% of one arm, non-randomly.
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/src/lab/pathologies/srm.py">Reproduce this figure</a>.
+    </p>
+  </div>
+</header>
+
+<main>
+  <section class="scrolly">
+    <div class="graphic">
+      <figure>
+        <svg id="chart" viewBox="0 0 420 320" role="img"
+             aria-label="Logged counts, biased estimate, and SRM detection power"></svg>
+        <figcaption id="caption">Assigned 50/50; logged 98,022 versus 100,000.</figcaption>
+        <noscript><img src="../assets/figures/srm.svg" alt="Static figure:
+          SRM detection power against loss rate at two scales" style="max-width:100%"></noscript>
+      </figure>
+    </div>
+    <div class="steps">
+      <div class="step" data-step="0">
+        <h3>The eye cannot see it</h3>
+        <p>Treatment logged <span class="number">98,022</span> users, control
+        <span class="number">100,000</span>. The bars look identical; a 1%
+        gap at this scale is invisible on any dashboard. In this simulation
+        the cause is planted: treatment users on old app versions crash
+        before exposure is logged.</p>
+      </div>
+      <div class="step" data-step="1">
+        <h3>The chi-square can</h3>
+        <p>A goodness-of-fit test of the logged counts against the designed
+        split gives p = <span class="number">0.0000088</span>. Randomization
+        makes the split one of the few things the experimenter knows
+        exactly, so even small deviations are loud evidence that something
+        between assignment and logging is broken.</p>
+      </div>
+      <div class="step" data-step="2">
+        <h3>Why it voids the readout</h3>
+        <p>The missing users are not random: crashes concentrate among
+        low-engagement users, so the treatment arm quietly sheds its low
+        end. The estimate reads <span class="number">0.53</span> against a
+        constructed truth of <span class="number">0.50</span>, and the bias
+        matches the closed form computed from who was dropped. With the
+        mechanism unknown in real life, no reweighting is trustworthy.</p>
+      </div>
+      <div class="step" data-step="3">
+        <h3>What the alarm can and cannot hear</h3>
+        <p>Detection is sampling arithmetic: the alarm fires once the missing
+        users outgrow the split's noise, roughly 3.3 x sqrt(total) users at
+        the conventional alpha of 0.001. At 100k per arm a
+        <span class="number">2%</span> one-arm loss is caught essentially
+        always and a 1% loss usually is not; at 1M per arm the same 1% is
+        caught essentially always. Small experiments do not get this
+        protection for small bugs.</p>
+      </div>
+      <div class="step" data-step="4">
+        <h3>Alarm means stop</h3>
+        <p>An SRM is a symptom, not a statistic to adjust (Fabijan et al.
+        catalog the causes: assignment bugs, logging loss, bot filtering,
+        redirects). The operating rule at every mature experimentation
+        platform: run the check on every experiment, and when it fires,
+        stop the analysis and find the bug. The p-value on the metric is
+        void until the p-value on the counts is boring.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="column">
+    <h2>The memo you write instead</h2>
+    <div class="memo">
+      <div class="label">Recommendation</div>
+      <p>Do not read the metric results; the assignment counts fail the SRM
+      check (p = 0.0000088 against the designed 50/50). In this simulated
+      case the surviving data overstates the true effect (0.53 measured
+      against a constructed 0.50) because the loss concentrates among
+      low-engagement treatment users. Find and fix the logging path, then
+      rerun; do not reweight around an unknown missingness mechanism.</p>
+    </div>
+    <p class="secondary">
+      Method note: Fabijan et al., "Diagnosing Sample Ratio Mismatch in
+      Online Controlled Experiments: A Taxonomy and Rules of Thumb for
+      Practitioners", KDD 2019. The check is validated against
+      scipy.stats.chisquare in
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/tests/integration/test_new_pathologies.py">tests</a>.
+    </p>
+    <div class="disclosure">
+      Synthetic data, fictional product. Regenerate with
+      <code>python scripts/regenerate_figures.py</code>.
+    </div>
+  </div>
+</main>
+
+<footer><div class="column"><a href="../index.html">All explainers</a></div></footer>
+
+<script src="../assets/vendor/d3.v7.min.js"></script>
+<script src="../assets/data/srm.js"></script>
+<script src="../assets/explainer.js"></script>
+<script>
+(function () {
+  const d = window.LAB_DATA["srm"];
+  const E = window.LabExplainer;
+  const ch = E.chart("#chart", {});
+
+  // Layer 1: logged counts.
+  const countsLayer = ch.svg.append("g");
+  {
+    const names = ["treatment", "control"];
+    const vals = [d.counts.treatment_logged, d.counts.control_logged];
+    const x = ch.xBand(names);
+    const y = ch.y([0, 110000]);
+    names.forEach((name, i) => {
+      countsLayer.append("rect")
+        .attr("x", x(name)).attr("width", x.bandwidth())
+        .attr("y", y(vals[i])).attr("height", y(0) - y(vals[i]))
+        .attr("rx", 3).attr("fill", i ? E.C.secondary : E.C.corrected);
+      countsLayer.append("text")
+        .attr("x", x(name) + x.bandwidth() / 2).attr("y", y(vals[i]) - 6)
+        .attr("text-anchor", "middle").attr("font-size", 12)
+        .attr("font-weight", 600).attr("fill", i ? E.C.secondary : E.C.corrected)
+        .text(vals[i].toLocaleString());
+      countsLayer.append("text")
+        .attr("x", x(name) + x.bandwidth() / 2).attr("y", y(0) + 16)
+        .attr("text-anchor", "middle").attr("font-size", 11)
+        .attr("fill", E.C.muted).text(name + " logged");
+    });
+    countsLayer.append("text").attr("x", ch.M.left).attr("y", ch.M.top)
+      .attr("font-size", 11).attr("fill", E.C.ink).attr("class", "alarm-note")
+      .attr("opacity", 0)
+      .text("chi-square vs the designed split: p = " + d.srm_p_value.toExponential(1));
+  }
+
+  // Layer 2: biased estimate.
+  const biasLayer = ch.svg.append("g").attr("opacity", 0);
+  {
+    const x = ch.xBand(["estimate on logged data"]);
+    const y = ch.y([0, 0.65]);
+    const v = d.estimates.naive;
+    biasLayer.append("rect")
+      .attr("x", x("estimate on logged data")).attr("width", x.bandwidth())
+      .attr("y", y(v)).attr("height", y(0) - y(v))
+      .attr("rx", 3).attr("fill", E.C.naive);
+    biasLayer.append("text")
+      .attr("x", x("estimate on logged data") + x.bandwidth() / 2).attr("y", y(v) - 6)
+      .attr("text-anchor", "middle").attr("font-size", 12)
+      .attr("font-weight", 600).attr("fill", E.C.naive).text(v.toFixed(2));
+    biasLayer.append("line")
+      .attr("x1", ch.M.left).attr("x2", ch.W - ch.M.right)
+      .attr("y1", y(d.true_effect)).attr("y2", y(d.true_effect))
+      .attr("stroke", E.C.muted).attr("stroke-dasharray", "5 4");
+    biasLayer.append("text").attr("x", ch.M.left + 4).attr("y", y(d.true_effect) - 6)
+      .attr("font-size", 11).attr("fill", E.C.ink)
+      .text("true effect = " + d.true_effect.toFixed(2));
+    biasLayer.append("text")
+      .attr("x", x("estimate on logged data") + x.bandwidth() / 2).attr("y", y(0) + 16)
+      .attr("text-anchor", "middle").attr("font-size", 11)
+      .attr("fill", E.C.muted).text("after the biased drop");
+  }
+
+  // Layer 3: detection power curves.
+  const powerLayer = ch.svg.append("g").attr("opacity", 0);
+  {
+    const x = ch.xLinear([0, 3]);
+    const y = ch.y([0, 1.05]);
+    const line = (curve) => d3.line()
+      .x((v, i) => x(d.drop_fractions[i] * 100)).y(v => y(v))(curve);
+    powerLayer.append("path").attr("fill", "none").attr("stroke", E.C.corrected)
+      .attr("stroke-width", 2.5).attr("d", line(d.power_100k));
+    powerLayer.append("path").attr("fill", "none").attr("stroke", E.C.secondary)
+      .attr("stroke-width", 2.5).attr("d", line(d.power_1m));
+    powerLayer.append("text").attr("x", x(2.1)).attr("y", y(d.power_100k[6]) + 16)
+      .attr("font-size", 11).attr("font-weight", 600).attr("fill", E.C.corrected)
+      .text("100k per arm");
+    powerLayer.append("text").attr("x", x(0.55)).attr("y", y(0.97) + 14)
+      .attr("font-size", 11).attr("font-weight", 600).attr("fill", E.C.secondary)
+      .text("1M per arm");
+  }
+
+  const layers = [countsLayer, biasLayer, powerLayer];
+  function show(layer, opts = {}) {
+    layers.forEach(l => l.transition().duration(400)
+      .attr("opacity", l === layer ? 1 : 0));
+    if (layer === countsLayer) {
+      const names = ["treatment", "control"];
+      const x = ch.xBand(names);
+      ch.axes(x, ch.y([0, 110000]), { yLabel: "logged users", yFmt: d3.format("~s") });
+      countsLayer.select(".alarm-note").transition().duration(400)
+        .attr("opacity", opts.alarm ? 1 : 0);
+    } else if (layer === biasLayer) {
+      ch.axes(ch.xBand(["estimate on logged data"]), ch.y([0, 0.65]),
+        { yLabel: "estimated effect" });
+    } else {
+      ch.axes(ch.xLinear([0, 3]), ch.y([0, 1.05]),
+        { xLabel: "share of one arm silently dropped (%)",
+          yLabel: "P(alarm fires)", yFmt: d3.format(".0%") });
+    }
+  }
+
+  E.scroller([
+    { enter: () => show(countsLayer),
+      caption: "Assigned 50/50; logged 98,022 versus 100,000. Could you tell?" },
+    { enter: () => show(countsLayer, { alarm: true }),
+      caption: "The counts are one of the few things you know exactly, so the test is loud." },
+    { enter: () => show(biasLayer),
+      caption: "The dropped users were the treatment arm's low end, so the estimate drifts up." },
+    { enter: () => show(powerLayer),
+      caption: "Detection is sqrt-of-scale arithmetic: what 100k misses, 1M catches." },
+    { enter: () => show(powerLayer),
+      caption: "Run the check on every experiment; when it fires, debug, do not adjust." },
+  ], { caption: "caption" });
+})();
+</script>
+
+</body>
+</html>

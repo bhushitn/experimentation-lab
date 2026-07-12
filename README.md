@@ -5,11 +5,13 @@ you whether your correction for peeking actually worked, because real
 experiment data has no answer key: you never observe the true effect you
 were estimating. This repository fixes that by cheating. It simulates user
 populations where the true treatment effect is set by construction, breaks
-experiments on them the six ways experiments break in production, and
-measures the damage against the truth. Daily significance checking turns a
+A/B tests on them the ways they break in production, and measures the
+damage against the truth. Daily significance checking turns a
 5% false positive rate into 24%. A two-week readout of a novelty effect
 overstates the launch impact by 3x. A rank test on revenue misses a third
-of real wins. Each number regenerates from committed, tested code with one
+of real wins. A city-by-city launch analyzed with difference-in-differences
+overstates its impact 2x when pre-trends diverge, and the placebo test is
+what catches it. Each number regenerates from committed, tested code with one
 command.
 
 **The explainers:** https://bhushitn.github.io/experimentation-lab/
@@ -24,7 +26,7 @@ The site needs nothing; the code needs Python 3.11+.
 git clone https://github.com/bhushitn/experimentation-lab.git
 cd experimentation-lab
 pip install -e ".[dev]"
-pytest tests/ -q                                    # 56 tests, ~15 seconds
+pytest tests/ -q                                    # 68 tests, ~15 seconds
 PYTHONPATH=src python scripts/regenerate_figures.py # every figure, from seeds
 ```
 
@@ -44,6 +46,14 @@ seeded and reproduced by CI on every push.
 | Novelty (long-run effect 0.10) | week-1 readout: 0.32, a 3.2x overstatement | post-burn-in window: 0.13 | analytic check |
 | Test choice (zero-inflated revenue, +25% spend effect) | Mann-Whitney power 68% [61.2, 74.1] | Welch t power 100% [98.1, 100] | 200 |
 | CUPED (28-day pre-period covariate) | plain Welch CI width 0.105 | 0.075, a 48.4% variance cut matching the analytic 48.3% | exact check |
+| Sample ratio mismatch (2% non-random loss of one arm) | estimate drifts to 0.53 against a true 0.50 | chi-square alarm at p = 0.0000088; stop and debug | exact check |
+| Switchback with carryover (marketplace, true effect 1.0) | 2-hour windows read 0.79 | burn-in reads 0.99 at half the variance of day-long windows | 400 per window |
+| Quasi-experiment, diff-in-diff (true effect 2.0) | 4.36 when pre-trends diverge, and nothing warns you | placebo test reads 1.07 where zero is expected, catching it | exact check |
+
+The engine's clean-experiment baseline doubles as an A/A test suite: 500
+replays with the effect fixed at zero hold the false positive rate at 5.0%,
+the confidence interval coverage at 95%, and the p-values uniform, which is
+what licenses attributing every deviation above to its pathology.
 
 The statistical toolbox behind these (Welch t, two-proportion z, chi-square,
 Mann-Whitney U, CUPED, bootstrap CIs, power/MDE, alpha-spending boundaries,
@@ -95,8 +105,8 @@ be architecture as decoration.
 
 ## Scope
 
-Everything is synthetic and the product scenarios describe a fictional
-short-video app. This is an educational and interview-preparation artifact,
+Everything is synthetic and the product scenarios describe fictional
+companies (a short-video app, a delivery marketplace). This is an educational and interview-preparation artifact,
 not an experimentation platform; if you need one of those, that is
 Optimizely, Statsig, or Eppo. What this repository offers that they do not
 is the answer key.

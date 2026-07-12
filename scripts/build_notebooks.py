@@ -23,7 +23,11 @@ from lab.pathologies import (
     simulate_interference,
     simulate_many_metrics,
     simulate_novelty,
+    simulate_quasi,
+    simulate_srm,
     simulate_subgroup_fishing,
+    simulate_switchback,
+    srm_detection_power,
 )
 from lab.populations import continuous_users
 from lab.populations.graphs import sbm_graph
@@ -175,6 +179,49 @@ SECTIONS = [
         "sub = simulate_subgroup_fishing(n_sims=4000, n_segments=20, seed=13)\n"
         "print(sub.summary.round(4))",
         "fig, _ = fig_subgroups(sub)",
+    ),
+    (
+        "Sample ratio mismatch: the smoke alarm",
+        "A logging bug drops 2% of the treatment arm, concentrated among "
+        "low-engagement users. The chi-square check on the counts fires long "
+        "before any eyeball would, and the estimate on the surviving data is "
+        "biased by an exactly computable amount.",
+        "srm_users = continuous_users(200_000, seed=30)\n"
+        "srm = simulate_srm(srm_users, assign_users(srm_users, seed=31),\n"
+        "                   effect=0.5, drop_fraction=0.02, seed=32)\n"
+        "print('logged counts:', dict(srm.counts))\n"
+        "print('SRM p-value:', f'{srm.srm_p_value:.2e}')\n"
+        "print('estimates:', dict(srm.estimates.round(3)), 'truth', srm.true_effect)",
+        "print('detection power, 2% loss at 100k/arm:',\n"
+        "      srm_detection_power(n_per_arm=100_000, drop_fraction=0.02))\n"
+        "print('detection power, 1% loss at 100k/arm:',\n"
+        "      srm_detection_power(n_per_arm=100_000, drop_fraction=0.01))",
+    ),
+    (
+        "Switchbacks: carryover versus window length",
+        "A marketplace alternates arms in time windows. Carryover dilutes "
+        "short windows; day-level shocks inflate the variance of long ones; "
+        "a burn-in hour after each flip recovers the truth at every length.",
+        "sb = simulate_switchback(seed=40)\n"
+        "print(sb.by_window.round(3).to_string(index=False))\n"
+        "print('truth:', sb.true_effect, '| carryover:', sb.carryover)",
+        "# The naive estimate matches the exact carryover arithmetic per window.\n"
+        "print(sb.by_window[['window_hours', 'naive_estimate', 'naive_expected']].round(3)\n"
+        "      .to_string(index=False))",
+    ),
+    (
+        "Quasi-experiments: diff-in-diff and the placebo test",
+        "A city-by-city launch, big cities first, no randomization. DiD "
+        "recovers the truth under parallel trends and overstates it when "
+        "treated cities were already growing faster; the pre-period placebo "
+        "separates the two cases.",
+        "parallel = simulate_quasi(differential_trend=0.0, seed=50)\n"
+        "violated = simulate_quasi(differential_trend=0.3, n_cities=200, seed=52)\n"
+        "print('truth:', parallel.true_effect)\n"
+        "print('parallel trends:', dict(parallel.estimates.round(3)))\n"
+        "print('divergent trends:', dict(violated.estimates.round(3)))",
+        "print('placebo DiD, parallel: ', round(parallel.placebo_did, 3))\n"
+        "print('placebo DiD, divergent:', round(violated.placebo_did, 3))",
     ),
     (
         "Novelty: the first week is not the launch effect",

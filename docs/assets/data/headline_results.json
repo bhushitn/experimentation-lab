@@ -13,5 +13,13 @@
  "interference_gte": 0.8,
  "subgroup_fishing_discovery_rate": 0.63775,
  "novelty_week1": 0.31791020236319767,
- "novelty_long_run": 0.1
+ "novelty_long_run": 0.1,
+ "srm_naive_estimate": 0.531,
+ "srm_true_effect": 0.5,
+ "switchback_naive_2h": 0.7876,
+ "switchback_burn_in_2h": 0.9892,
+ "switchback_true_effect": 1.0,
+ "quasi_did_parallel": 1.951,
+ "quasi_did_violated": 4.363,
+ "quasi_true_effect": 2.0
 }

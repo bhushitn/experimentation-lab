@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>When you cannot randomize: difference-in-differences and its blind spot</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="column">
+    <p class="meta"><a href="../index.html">Experimentation Lab</a> / explainers</p>
+    <h1>When you cannot randomize</h1>
+    <p class="deck">
+      The feature launched city by city, big cities first, months ago.
+      Leadership wants the impact number anyway. This is the analysis you
+      run when the experiment never happened, and the check that decides
+      whether to believe it.
+    </p>
+    <p class="meta">
+      Simulated city-by-period panel with every component explicit: city
+      effects, a common trend, the launch effect (2.0 by construction), and
+      optionally a differential trend.
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/src/lab/pathologies/quasi.py">Reproduce this figure</a>.
+    </p>
+  </div>
+</header>
+
+<main>
+  <section class="scrolly">
+    <div class="graphic">
+      <figure>
+        <svg id="chart" viewBox="0 0 420 320" role="img"
+             aria-label="City group trajectories and quasi-experimental estimates"></svg>
+        <figcaption id="caption">Metric by period for launched and unlaunched cities.</figcaption>
+        <noscript><img src="../assets/figures/quasi.svg" alt="Static figure:
+          launched and unlaunched city trajectories around the launch" style="max-width:100%"></noscript>
+      </figure>
+    </div>
+    <div class="steps">
+      <div class="step" data-step="0">
+        <h3>The groups were never comparable</h3>
+        <p>Launched cities sit well above unlaunched ones before the launch
+        even happens, because adoption followed size. Both drift upward on a
+        common trend. Nothing here is randomized; every difference is
+        entangled with why cities launched when they did.</p>
+      </div>
+      <div class="step" data-step="1">
+        <h3>Two obvious numbers, both wrong</h3>
+        <p>After-minus-before in launched cities:
+        <span class="number">5.91</span>, because it absorbs the trend
+        everyone was riding. Launched-versus-unlaunched after launch:
+        <span class="number">5.32</span>, because it absorbs the
+        pre-existing gap. The constructed truth is
+        <span class="number">2.0</span>. Both numbers would be presented
+        with straight faces in a real review.</p>
+      </div>
+      <div class="step" data-step="2">
+        <h3>Difference the differences</h3>
+        <p>Take each group's change from before to after, then subtract:
+        the city gap cancels, the common trend cancels, and what remains is
+        <span class="number">1.95</span>, on the truth. That is
+        difference-in-differences, and it rests on exactly one assumption:
+        without the launch, the two groups would have moved in parallel.</p>
+      </div>
+      <div class="step" data-step="3">
+        <h3>The assumption fails quietly</h3>
+        <p>Now the same panel, but launched cities were already growing
+        faster (a differential trend of 0.3 per period; think: the cities
+        chosen first were chosen because they were taking off). DiD reads
+        <span class="number">4.36</span> against the same truth of 2.0, a
+        118% overstatement, and nothing in the post-launch data warns you.
+        DiD does not fail loudly; it fails fluently.</p>
+      </div>
+      <div class="step" data-step="4">
+        <h3>The placebo test is the price of admission</h3>
+        <p>Estimate the "effect" of a fake launch placed in the middle of
+        the pre-period, where the true effect is zero by construction.
+        Parallel world: <span class="number">-0.13</span>, boring, as it
+        should be. Divergent world: <span class="number">1.07</span>, alarm.
+        A DiD readout without a pre-trend placebo is an assumption wearing
+        a confidence interval.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="column">
+    <h2>The memo you write instead</h2>
+    <div class="memo">
+      <div class="label">Recommendation</div>
+      <p>Report the difference-in-differences estimate only alongside its
+      placebo: on this panel the pre-period placebo reads 1.07 where zero is
+      expected, so the parallel-trends assumption fails and the headline DiD
+      (4.36) overstates the true effect (2.0 by construction) by more than
+      double. Either match launched cities to controls on pre-period growth
+      before differencing, or state the number as an upper bound, not an
+      estimate.</p>
+    </div>
+    <p class="secondary">
+      The pattern generalizes: every quasi-experimental method is an
+      untestable assumption plus arithmetic. The placebo does not prove the
+      assumption; it is the cheapest way to catch it failing. When the
+      decision is worth real money and the placebo fires, the honest answer
+      is a real experiment, even a small one.
+    </p>
+    <div class="disclosure">
+      Synthetic data, fictional product. Regenerate with
+      <code>python scripts/regenerate_figures.py</code>.
+    </div>
+  </div>
+</main>
+
+<footer><div class="column"><a href="../index.html">All explainers</a></div></footer>
+
+<script src="../assets/vendor/d3.v7.min.js"></script>
+<script src="../assets/data/quasi.js"></script>
+<script src="../assets/explainer.js"></script>
+<script>
+(function () {
+  const d = window.LAB_DATA["quasi"];
+  const E = window.LabExplainer;
+  const ch = E.chart("#chart", {});
+
+  const x = ch.xLinear([0, 15]);
+  function trajLayer(g, world, opacity) {
+    const layer = ch.svg.append("g").attr("opacity", opacity);
+    const all = world.treated_mean.concat(world.control_mean);
+    const y = ch.y([Math.min(...all) - 1, Math.max(...all) + 1]);
+    const mk = (vals) => d3.line().x((v, i) => x(world.periods[i])).y(v => y(v))(vals);
+    layer.append("line")
+      .attr("x1", x(d.launch_period - 0.5)).attr("x2", x(d.launch_period - 0.5))
+      .attr("y1", ch.M.top).attr("y2", ch.H - ch.M.bottom)
+      .attr("stroke", E.C.muted).attr("stroke-dasharray", "5 4");
+    layer.append("text").attr("x", x(d.launch_period - 0.5) + 4).attr("y", ch.M.top + 10)
+      .attr("font-size", 11).attr("fill", E.C.ink).text("launch");
+    layer.append("path").attr("fill", "none").attr("stroke", E.C.corrected)
+      .attr("stroke-width", 2.5).attr("d", mk(world.treated_mean));
+    layer.append("path").attr("fill", "none").attr("stroke", E.C.secondary)
+      .attr("stroke-width", 2.5).attr("d", mk(world.control_mean));
+    layer.append("text").attr("x", x(0.2)).attr("y", y(world.treated_mean[0]) - 8)
+      .attr("font-size", 11).attr("font-weight", 600).attr("fill", E.C.corrected)
+      .text("launched cities");
+    layer.append("text").attr("x", x(0.2)).attr("y", y(world.control_mean[0]) + 16)
+      .attr("font-size", 11).attr("font-weight", 600).attr("fill", E.C.secondary)
+      .text("unlaunched cities");
+    layer.yScale = y;
+    return layer;
+  }
+
+  const parallelLayer = trajLayer(ch.svg, d.parallel, 1);
+  const violatedLayer = trajLayer(ch.svg, d.violated, 0);
+
+  // Estimates bars layer.
+  const barsLayer = ch.svg.append("g").attr("opacity", 0);
+  {
+    const names = ["after vs before", "launched vs not", "DiD"];
+    const est = d.parallel.estimates;
+    const vals = [est.post_vs_pre, est.treated_vs_control, est.difference_in_differences];
+    const xb = ch.xBand(names);
+    const y = ch.y([0, 7]);
+    const colors = [E.C.naive, E.C.naive, E.C.corrected];
+    names.forEach((name, i) => {
+      barsLayer.append("rect")
+        .attr("x", xb(name)).attr("width", xb.bandwidth())
+        .attr("y", y(vals[i])).attr("height", y(0) - y(vals[i]))
+        .attr("rx", 3).attr("fill", colors[i]);
+      barsLayer.append("text")
+        .attr("x", xb(name) + xb.bandwidth() / 2).attr("y", y(vals[i]) - 6)
+        .attr("text-anchor", "middle").attr("font-size", 12)
+        .attr("font-weight", 600).attr("fill", colors[i]).text(vals[i].toFixed(2));
+      barsLayer.append("text")
+        .attr("x", xb(name) + xb.bandwidth() / 2).attr("y", y(0) + 16)
+        .attr("text-anchor", "middle").attr("font-size", 10)
+        .attr("fill", E.C.muted).text(name);
+    });
+    barsLayer.append("line")
+      .attr("x1", ch.M.left).attr("x2", ch.W - ch.M.right)
+      .attr("y1", y(d.true_effect)).attr("y2", y(d.true_effect))
+      .attr("stroke", E.C.muted).attr("stroke-dasharray", "5 4");
+    barsLayer.append("text").attr("x", ch.W - ch.M.right - 4).attr("y", y(d.true_effect) - 6)
+      .attr("text-anchor", "end").attr("font-size", 11).attr("fill", E.C.ink)
+      .text("truth = 2.00");
+  }
+
+  // Placebo bars layer.
+  const placeboLayer = ch.svg.append("g").attr("opacity", 0);
+  {
+    const names = ["parallel world", "divergent world"];
+    const vals = [d.parallel.placebo_did, d.violated.placebo_did];
+    const xb = ch.xBand(names);
+    const y = ch.y([-0.4, 1.4]);
+    names.forEach((name, i) => {
+      const v = vals[i];
+      placeboLayer.append("rect")
+        .attr("x", xb(name)).attr("width", xb.bandwidth())
+        .attr("y", y(Math.max(v, 0))).attr("height", Math.abs(y(v) - y(0)))
+        .attr("rx", 3).attr("fill", i ? E.C.naive : E.C.corrected);
+      placeboLayer.append("text")
+        .attr("x", xb(name) + xb.bandwidth() / 2).attr("y", y(Math.max(v, 0)) - 6)
+        .attr("text-anchor", "middle").attr("font-size", 12)
+        .attr("font-weight", 600).attr("fill", i ? E.C.naive : E.C.corrected)
+        .text(v.toFixed(2));
+      placeboLayer.append("text")
+        .attr("x", xb(name) + xb.bandwidth() / 2).attr("y", y(-0.4) + 16)
+        .attr("text-anchor", "middle").attr("font-size", 10)
+        .attr("fill", E.C.muted).text(name);
+    });
+    placeboLayer.append("line")
+      .attr("x1", ch.M.left).attr("x2", ch.W - ch.M.right)
+      .attr("y1", y(0)).attr("y2", y(0))
+      .attr("stroke", E.C.baseline);
+    placeboLayer.append("text").attr("x", ch.M.left + 4).attr("y", y(0) - 6)
+      .attr("font-size", 11).attr("fill", E.C.ink)
+      .text("a fake launch in the pre-period should read zero");
+  }
+
+  const layers = [parallelLayer, violatedLayer, barsLayer, placeboLayer];
+  function show(layer, world) {
+    layers.forEach(l => l.transition().duration(400).attr("opacity", l === layer ? 1 : 0));
+    if (layer === parallelLayer || layer === violatedLayer) {
+      ch.axes(x, layer.yScale, { xLabel: "period", yLabel: "metric, group mean" });
+    } else if (layer === barsLayer) {
+      ch.axes(ch.xBand(["after vs before", "launched vs not", "DiD"]), ch.y([0, 7]),
+        { yLabel: "estimated launch effect" });
+    } else {
+      ch.axes(ch.xBand(["parallel world", "divergent world"]), ch.y([-0.4, 1.4]),
+        { yLabel: "placebo DiD (should be 0)" });
+    }
+  }
+
+  E.scroller([
+    { enter: () => show(parallelLayer),
+      caption: "Launched cities were bigger before launch; both groups ride a common trend." },
+    { enter: () => show(barsLayer),
+      caption: "Truth is 2.0. The two obvious estimators absorb the trend and the gap." },
+    { enter: () => show(barsLayer),
+      caption: "DiD cancels both and lands on 1.95, if the parallel-trends assumption holds." },
+    { enter: () => show(violatedLayer),
+      caption: "Same analysis, but launched cities were already growing faster. DiD: 4.36." },
+    { enter: () => show(placeboLayer),
+      caption: "The pre-period placebo separates the two worlds before you trust the estimate." },
+  ], { caption: "caption" });
+})();
+</script>
+
+</body>
+</html>

@@ -79,3 +79,31 @@ is disqualifying the moment it is questioned.
 these experiments at an employer). Also rejected: no narrative at all, which
 reads as a textbook and loses the recommendation-memo register the repo exists
 to demonstrate.
+
+## ADR-7: Scope extension for senior-level and marketplace coverage
+
+**Decision.** Add three analyses beyond the original six pathologies: sample
+ratio mismatch (the assignment-count alarm and why a firing alarm voids the
+readout), switchback experiments (carryover bias versus window length, the
+day-shock variance cost, and the burn-in correction), and quasi-experiments
+(difference-in-differences, its exact bias under diverging pre-trends, and
+the placebo test). ADR-1's cut of SRM is reversed.
+
+**Evidence.** Current interview guides for senior experimentation roles name
+SRM diagnostics explicitly, and switchbacks, CUPED, and Bayesian methods as
+expectations at staff level for companies running thousands of experiments;
+marketplace companies interview on time-based designs specifically. All
+three fit the repository's one differentiator, ground truth by construction:
+the SRM bias, the carryover attenuation, and the DiD bias under trend
+divergence are each verified against exact arithmetic in the tests, which no
+prose treatment of these topics can do. Citations verified: Fabijan et al.,
+"Diagnosing Sample Ratio Mismatch in Online Controlled Experiments", KDD
+2019, DOI 10.1145/3292500.3330722.
+
+**Rejected alternatives.** Bayesian readouts and multi-armed bandits: real
+topics, but they change the inferential frame rather than break an
+experiment, so they fit a future page less well than these three, each of
+which has a naive analysis with a measurable error and a correction that
+recovers the truth. Synthetic control: strictly more machinery than DiD for
+the same lesson (an untestable assumption plus arithmetic); noted on the
+quasi-experiments page as the next step when the placebo fires.

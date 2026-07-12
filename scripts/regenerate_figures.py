@@ -19,13 +19,19 @@ from matplotlib.figure import Figure
 
 from lab.assignment import assign_clusters, assign_users
 from lab.pathologies import (
+    QuasiResult,
     effect_path,
     simulate_contamination,
     simulate_daily_peeking,
     simulate_interference,
     simulate_many_metrics,
     simulate_novelty,
+    simulate_quasi,
+    simulate_srm,
     simulate_subgroup_fishing,
+    simulate_switchback,
+    srm_detection_power,
+    switchback_single_run,
 )
 from lab.populations import continuous_users
 from lab.populations.graphs import sbm_graph
@@ -46,7 +52,10 @@ from lab.reporting.explainer_data import (
 from lab.reporting.explainer_figures import (
     fig_cuped,
     fig_power,
+    fig_quasi,
     fig_randomization,
+    fig_srm,
+    fig_switchback,
     fig_test_choice,
 )
 
@@ -89,6 +98,70 @@ def build_all() -> dict[str, tuple[Figure, dict[str, Any]]]:
     path = effect_path(days, long_run=0.10, novelty_amplitude=0.40, decay_days=5.0)
     out["novelty"] = fig_novelty(nov, path_days=days, path=path)
 
+    users_srm = continuous_users(200_000, seed=30)
+    srm = simulate_srm(users_srm, assign_users(users_srm, seed=31), effect=0.5, seed=32)
+    drop_fractions = [0.0, 0.002, 0.005, 0.0075, 0.01, 0.015, 0.02, 0.03]
+    srm_data = {
+        "counts": {k: int(v) for k, v in srm.counts.items()},
+        "srm_p_value": float(srm.srm_p_value),
+        "estimates": {k: round(float(v), 3) for k, v in srm.estimates.items()},
+        "true_effect": srm.true_effect,
+        "drop_fractions": drop_fractions,
+        "power_100k": [
+            srm_detection_power(n_per_arm=100_000, drop_fraction=f, seed=33)
+            for f in drop_fractions
+        ],
+        "power_1m": [
+            srm_detection_power(n_per_arm=1_000_000, drop_fraction=f, seed=34)
+            for f in drop_fractions
+        ],
+    }
+    out["srm"] = (fig_srm(srm_data), srm_data)
+
+    sb = simulate_switchback(seed=40)
+    series, sb_naive, sb_burn = switchback_single_run(window=4, seed=44)
+    week = series[series["hour"] < 96]
+    sb_data = {
+        "by_window": [
+            {k: round(float(v), 4) for k, v in row.items()}
+            for row in sb.by_window.to_dict("records")
+        ],
+        "true_effect": sb.true_effect,
+        "carryover": sb.carryover,
+        "single_run": {
+            "hour": week["hour"].tolist(),
+            "assigned": [bool(a) for a in week["assigned"]],
+            "outcome": [round(float(v), 3) for v in week["outcome"]],
+            "naive": round(sb_naive, 3),
+            "burn_in": round(sb_burn, 3),
+        },
+    }
+    out["switchback"] = (fig_switchback(sb_data), sb_data)
+
+    def group_means(q_res: QuasiResult) -> dict[str, Any]:
+        panel = q_res.panel
+        g = panel.groupby(["treated_city", "period"])["outcome"].mean()
+        periods = sorted(panel["period"].unique())
+        return {
+            "periods": [int(p) for p in periods],
+            "treated_mean": [round(float(g[True, p]), 3) for p in periods],
+            "control_mean": [round(float(g[False, p]), 3) for p in periods],
+            "estimates": {k: round(float(v), 3) for k, v in q_res.estimates.items()},
+            "expected": {k: round(float(v), 3) for k, v in q_res.expected.items()},
+            "placebo_did": round(q_res.placebo_did, 3),
+        }
+
+    parallel = simulate_quasi(differential_trend=0.0, seed=50)
+    violated = simulate_quasi(differential_trend=0.3, n_cities=200, seed=52)
+    quasi_data = {
+        "parallel": group_means(parallel),
+        "violated": group_means(violated),
+        "true_effect": parallel.true_effect,
+        "launch_period": 8,
+        "differential_trend": 0.3,
+    }
+    out["quasi"] = (fig_quasi(quasi_data), quasi_data)
+
     rand_data = build_randomization()
     out["randomization"] = (fig_randomization(rand_data), rand_data)
     test_data = build_test_choice()
@@ -125,6 +198,26 @@ def headline_results(figures: dict[str, tuple[Figure, dict[str, Any]]]) -> dict[
         "subgroup_fishing_discovery_rate": sub["rates"][0],
         "novelty_week1": nov["estimates"]["first_week"],
         "novelty_long_run": nov["long_run_effect"],
+        "srm_naive_estimate": figures["srm"][1]["estimates"]["naive"],
+        "srm_true_effect": figures["srm"][1]["true_effect"],
+        "switchback_naive_2h": next(
+            r["naive_estimate"]
+            for r in figures["switchback"][1]["by_window"]
+            if r["window_hours"] == 2
+        ),
+        "switchback_burn_in_2h": next(
+            r["burn_in_estimate"]
+            for r in figures["switchback"][1]["by_window"]
+            if r["window_hours"] == 2
+        ),
+        "switchback_true_effect": figures["switchback"][1]["true_effect"],
+        "quasi_did_parallel": figures["quasi"][1]["parallel"]["estimates"][
+            "difference_in_differences"
+        ],
+        "quasi_did_violated": figures["quasi"][1]["violated"]["estimates"][
+            "difference_in_differences"
+        ],
+        "quasi_true_effect": figures["quasi"][1]["true_effect"],
     }
 
 

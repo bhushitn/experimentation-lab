@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Switchbacks: testing when the marketplace is the unit</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="column">
+    <p class="meta"><a href="../index.html">Experimentation Lab</a> / explainers</p>
+    <h1>Switchbacks: testing when the marketplace is the unit</h1>
+    <p class="deck">
+      A delivery marketplace wants to A/B test a new dispatch algorithm. It
+      cannot randomize couriers: both arms would draw from the same pool,
+      and the treatment's effect on supply would bleed straight into
+      control. So it randomizes time itself, flipping the whole city between
+      algorithms in windows. Then the question becomes: how long is a
+      window?
+    </p>
+    <p class="meta">
+      400 simulated 28-day city experiments per window length; true
+      steady-state effect 1.0, with 40% of each hour's outcome carried from
+      the previous hour and day-level market shocks.
+      <a href="https://github.com/bhushitn/experimentation-lab/blob/main/src/lab/pathologies/switchback.py">Reproduce this figure</a>.
+    </p>
+  </div>
+</header>
+
+<main>
+  <section class="scrolly">
+    <div class="graphic">
+      <figure>
+        <svg id="chart" viewBox="0 0 420 320" role="img"
+             aria-label="Switchback schedule, bias by window length, and the burn-in fix"></svg>
+        <figcaption id="caption">Four days of one run: the city alternates between algorithms.</figcaption>
+        <noscript><img src="../assets/figures/switchback.svg" alt="Static figure:
+          naive and burn-in estimates against window length" style="max-width:100%"></noscript>
+      </figure>
+    </div>
+    <div class="steps">
+      <div class="step" data-step="0">
+        <h3>Randomize time, not users</h3>
+        <p>Each colored band is a window where the whole market runs one arm.
+        Within a window the marketplace equilibrates around that arm's
+        algorithm; the analysis compares hours under treatment to hours
+        under control. One market, one experiment, no user-level
+        contamination.</p>
+      </div>
+      <div class="step" data-step="1">
+        <h3>Markets do not reset on the hour</h3>
+        <p>Courier positions, queued orders, and surge state persist across
+        the flip: in this simulation <span class="number">40%</span> of each
+        hour's outcome is carried from the previous hour. The first hour of
+        every control window still half-runs the treatment, and vice versa.
+        The contamination is symmetric, so it does not cancel; it dilutes
+        the contrast.</p>
+      </div>
+      <div class="step" data-step="2">
+        <h3>Short windows, big bias</h3>
+        <p>The dilution is worst when windows are short, because a larger
+        share of hours sit right after a flip: one-hour windows estimate
+        <span class="number">0.61</span> of a true 1.0, two-hour windows
+        <span class="number">0.79</span>, day-long windows
+        <span class="number">0.97</span>. The bias matches the exact
+        carryover arithmetic, not just the simulation.</p>
+      </div>
+      <div class="step" data-step="3">
+        <h3>Long windows, big variance</h3>
+        <p>So use day-long windows? Now each window rides one day's market
+        shocks (weather, a promo, a concert) and the effective sample is the
+        number of days, not hours: the standard error doubles from
+        <span class="number">0.21</span> at two-hour windows to
+        <span class="number">0.42</span> at day-long ones. This is the
+        design tradeoff switchbacks force: bias on one side, variance on
+        the other.</p>
+      </div>
+      <div class="step" data-step="4">
+        <h3>Burn-in buys out the bias</h3>
+        <p>Drop the first hour after every flip and re-estimate: the
+        burn-in analysis reads <span class="number">0.99</span> at
+        two-hour windows, on the truth, while keeping the variance of
+        short windows. The practical design: windows a few multiples of
+        the system's memory, plus a burn-in matched to it. Knowing your
+        marketplace's decay time is the actual expertise.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="column">
+    <h2>The memo you write instead</h2>
+    <div class="memo">
+      <div class="label">Recommendation</div>
+      <p>Run the dispatch test as a switchback with 2-hour windows and a
+      1-hour burn-in after each flip, randomizing the window schedule.
+      Simulated against a known truth with 40% hour-to-hour carryover:
+      naive analysis of 2-hour windows understates the effect by 21%, while
+      the burn-in estimate is unbiased (0.99 against a true 1.00) at half
+      the standard error of day-long windows.</p>
+    </div>
+    <div class="disclosure">
+      Synthetic data, fictional marketplace. Regenerate with
+      <code>python scripts/regenerate_figures.py</code>.
+    </div>
+  </div>
+</main>
+
+<footer><div class="column"><a href="../index.html">All explainers</a></div></footer>
+
+<script src="../assets/vendor/d3.v7.min.js"></script>
+<script src="../assets/data/switchback.js"></script>
+<script src="../assets/explainer.js"></script>
+<script>
+(function () {
+  const d = window.LAB_DATA["switchback"];
+  const E = window.LabExplainer;
+  const ch = E.chart("#chart", {});
+  const run = d.single_run;
+
+  // Layer 1: four-day strip of one run: assignment bands + outcome line.
+  const stripLayer = ch.svg.append("g");
+  {
+    const x = ch.xLinear([0, 96]);
+    const ext = d3.extent(run.outcome);
+    const y = ch.y([ext[0] - 0.5, ext[1] + 0.5]);
+    let start = 0;
+    for (let h = 1; h <= run.hour.length; h++) {
+      if (h === run.hour.length || run.assigned[h] !== run.assigned[start]) {
+        stripLayer.append("rect")
+          .attr("x", x(start)).attr("width", x(h) - x(start))
+          .attr("y", ch.M.top).attr("height", ch.H - ch.M.top - ch.M.bottom)
+          .attr("fill", run.assigned[start] ? E.C.corrected : E.C.secondary)
+          .attr("opacity", 0.14);
+        start = h;
+      }
+    }
+    stripLayer.append("path")
+      .attr("fill", "none").attr("stroke", "#52514e").attr("stroke-width", 1.4)
+      .attr("d", d3.line().x((v, i) => x(run.hour[i])).y(v => y(v))(run.outcome));
+    stripLayer.append("text").attr("x", ch.M.left).attr("y", ch.M.top - 4)
+      .attr("font-size", 11).attr("fill", E.C.ink)
+      .text("blue bands: treatment hours; green: control (window = 4h)");
+  }
+
+  // Layer 2: estimates vs window length.
+  const curveLayer = ch.svg.append("g").attr("opacity", 0);
+  const windows = d.by_window.map(r => r.window_hours);
+  const x2 = ch.xLinear([0, 25]);
+  const y2 = ch.y([0.4, 1.15]);
+  {
+    const naive = d.by_window.map(r => r.naive_estimate);
+    const burn = d.by_window.map(r => r.burn_in_estimate);
+    const mk = (vals) => d3.line().x((v, i) => x2(windows[i])).y(v => y2(v))(vals);
+    curveLayer.append("line")
+      .attr("x1", ch.M.left).attr("x2", ch.W - ch.M.right)
+      .attr("y1", y2(d.true_effect)).attr("y2", y2(d.true_effect))
+      .attr("stroke", E.C.muted).attr("stroke-dasharray", "5 4");
+    curveLayer.append("text").attr("x", ch.W - ch.M.right - 4).attr("y", y2(d.true_effect) - 6)
+      .attr("text-anchor", "end").attr("font-size", 11).attr("fill", E.C.ink)
+      .text("true effect = 1.00");
+    curveLayer.append("path").attr("fill", "none").attr("stroke", E.C.naive)
+      .attr("stroke-width", 2.5).attr("d", mk(naive)).attr("class", "naive-line");
+    curveLayer.selectAll("circle.n").data(naive).join("circle")
+      .attr("cx", (v, i) => x2(windows[i])).attr("cy", v => y2(v)).attr("r", 3.5)
+      .attr("fill", E.C.naive);
+    curveLayer.append("text").attr("x", x2(3)).attr("y", y2(naive[1]) + 18)
+      .attr("font-size", 11).attr("font-weight", 600).attr("fill", E.C.naive)
+      .text("naive: all hours");
+    const burnG = curveLayer.append("g").attr("class", "burn").attr("opacity", 0);
+    burnG.append("path").attr("fill", "none").attr("stroke", E.C.corrected)
+      .attr("stroke-width", 2.5).attr("d", mk(burn));
+    burnG.selectAll("circle").data(burn).join("circle")
+      .attr("cx", (v, i) => x2(windows[i])).attr("cy", v => y2(v)).attr("r", 3.5)
+      .attr("fill", E.C.corrected);
+    burnG.append("text").attr("x", x2(9)).attr("y", y2(1.05) - 6)
+      .attr("font-size", 11).attr("font-weight", 600).attr("fill", E.C.corrected)
+      .text("burn-in: drop the hour after each flip");
+  }
+
+  // Layer 3: SE vs window length (variance cost).
+  const seLayer = ch.svg.append("g").attr("opacity", 0);
+  const ySe = ch.y([0, 0.5]);
+  {
+    const se = d.by_window.map(r => r.burn_in_se);
+    seLayer.append("path").attr("fill", "none").attr("stroke", E.C.tertiary)
+      .attr("stroke-width", 2.5)
+      .attr("d", d3.line().x((v, i) => x2(windows[i])).y(v => ySe(v))(se));
+    seLayer.selectAll("circle").data(se).join("circle")
+      .attr("cx", (v, i) => x2(windows[i])).attr("cy", v => ySe(v)).attr("r", 3.5)
+      .attr("fill", E.C.tertiary);
+    seLayer.append("text").attr("x", x2(12)).attr("y", ySe(se[4]) - 10)
+      .attr("font-size", 11).attr("font-weight", 600).attr("fill", E.C.tertiary)
+      .text("standard error of the estimate");
+  }
+
+  const layers = [stripLayer, curveLayer, seLayer];
+  function show(layer) {
+    layers.forEach(l => l.transition().duration(400).attr("opacity", l === layer ? 1 : 0));
+    if (layer === stripLayer) {
+      const ext = d3.extent(run.outcome);
+      ch.axes(ch.xLinear([0, 96]), ch.y([ext[0] - 0.5, ext[1] + 0.5]),
+        { xLabel: "hour (first four days)", yLabel: "market metric" });
+    } else if (layer === curveLayer) {
+      ch.axes(x2, y2, { xLabel: "window length (hours)", yLabel: "estimated effect" });
+    } else {
+      ch.axes(x2, ySe, { xLabel: "window length (hours)", yLabel: "standard error" });
+    }
+  }
+
+  E.scroller([
+    { enter: () => show(stripLayer),
+      caption: "One simulated city, one experiment: whole-market windows alternate arms." },
+    { enter: () => show(stripLayer),
+      caption: "The first hour after each flip still carries 40% of the previous arm's state." },
+    { enter: () => { show(curveLayer); curveLayer.select(".burn").transition().duration(300).attr("opacity", 0); },
+      caption: "Naive estimates by window length: short windows dilute the effect." },
+    { enter: () => show(seLayer),
+      caption: "The other blade: day-long windows double the standard error (day shocks)." },
+    { enter: () => { show(curveLayer); curveLayer.select(".burn").transition().duration(500).attr("opacity", 1); },
+      caption: "Burn-in recovers the truth at every window length; short windows keep the precision." },
+  ], { caption: "caption" });
+})();
+</script>
+
+</body>
+</html>
