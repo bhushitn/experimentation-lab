@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite it."
+title: "Experimentation Lab"
+abstract: >-
+  A/B testing pathologies simulated against known ground truth: peeking, SRM,
+  interference, switchbacks, difference-in-differences, and more, each with the
+  measured damage and the correction that fixes it.
+authors:
+  - family-names: Nema
+    given-names: Bhushit
+repository-code: "https://github.com/bhushitn/experimentation-lab"
+url: "https://bhushitn.github.io/experimentation-lab/"
+license: MIT
+version: 1.0.0
+date-released: 2026-07-18

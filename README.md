@@ -1,5 +1,10 @@
 # Experimentation Lab
 
+[![CI](https://github.com/bhushitn/experimentation-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/bhushitn/experimentation-lab/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
+[![Explainers](https://img.shields.io/badge/explainers-live-2a78d6.svg)](https://bhushitn.github.io/experimentation-lab/)
+
 Every A/B test platform will tell you your p-value. None of them can tell
 you whether your correction for peeking actually worked, because real
 experiment data has no answer key: you never observe the true effect you
@@ -13,6 +18,13 @@ of real wins. A city-by-city launch analyzed with difference-in-differences
 overstates its impact 2x when pre-trends diverge, and the placebo test is
 what catches it. Each number regenerates from committed, tested code with one
 command.
+
+<img src="docs/assets/figures/peeking.gif" alt="Animated: peeking daily drives the false positive rate to 24.1% over 14 looks while an O'Brien-Fleming boundary holds it at 5.0%" width="640">
+
+Peek at an experiment with no true effect once a day and by the fourteenth
+look 24.1% of those experiments read as significant; an alpha-spending
+boundary holds the rate at 5.0%. Static version: [peeking.png](docs/assets/figures/peeking.png).
+Reproduce: `PYTHONPATH=src python scripts/render_peeking_media.py`.
 
 **The explainers:** https://bhushitn.github.io/experimentation-lab/
 
