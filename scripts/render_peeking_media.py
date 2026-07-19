@@ -73,7 +73,8 @@ def render_animation(days, naive, seq, n_sims, alpha=0.05):
     def update(k):
         naive_line.set_data(days[:k], naive[:k])
         seq_line.set_data(days[:k], seq[:k])
-        readout.set_text(f"day {days[k - 1]}: {naive[k - 1]:.0%} naive vs {seq[k - 1]:.0%} corrected")
+        naive_pct, seq_pct = f"{naive[k - 1]:.0%}", f"{seq[k - 1]:.0%}"
+        readout.set_text(f"day {days[k - 1]}: {naive_pct} naive vs {seq_pct} corrected")
         return naive_line, seq_line, readout
 
     frames = list(range(1, len(days) + 1)) + [len(days)] * 6
